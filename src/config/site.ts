@@ -4,55 +4,58 @@ export const siteConfig = {
   name: "Control de caja",
   description: "Sistema de control de caja diaria",
   navItems: [
+   
     {
-      label: "Home",
-      href: "/",
+      label: "Caja Diaria",
+      href: "/cajaDiaria",
     },
     {
-      label: "Docs",
-      href: "/docs",
+      label: "Categoria",
+      href: "/categoria",
     },
     {
-      label: "Pricing",
-      href: "/pricing",
+      label: "Detalles de la caja",
+      href: "/detalleCaja",
     },
     {
-      label: "Blog",
-      href: "/blog",
+      label: "Productos",
+      href: "/producto",
     },
     {
-      label: "About",
-      href: "/about",
+      label: "Transacciones",
+      href: "/transacciones",
     },
+    {
+      label: "Usuarios",
+      href: "/users",
+    },
+    
   ],
   navMenuItems: [
+    
     {
-      label: "Profile",
-      href: "/profile",
+      label: "Caja Diaria",
+      href: "/cajaDiaria",
     },
     {
-      label: "Dashboard",
-      href: "/dashboard",
+      label: "Categoria",
+      href: "/categoria",
     },
     {
-      label: "Projects",
-      href: "/projects",
+      label: "Detalles de la caja",
+      href: "/detalleCaja",
     },
     {
-      label: "Team",
-      href: "/team",
+      label: "Productos",
+      href: "/producto",
     },
     {
-      label: "Calendar",
-      href: "/calendar",
+      label: "Transacciones",
+      href: "/transacciones",
     },
     {
-      label: "Settings",
-      href: "/settings",
-    },
-    {
-      label: "Help & Feedback",
-      href: "/help-feedback",
+      label: "Usuarios",
+      href: "/users",
     },
     {
       label: "Logout",
