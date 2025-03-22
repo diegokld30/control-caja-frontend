@@ -1,6 +1,6 @@
-import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
-import { Input } from "@heroui/input";
+// import { Button } from "@heroui/button";
+// import { Kbd } from "@heroui/kbd";
+// import { Input } from "@heroui/input";
 import {
   Navbar as HeroUINavbar,
   NavbarBrand,
@@ -19,34 +19,35 @@ import { NavLink } from "react-router-dom";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { SearchIcon } from "@/components/icons";
+// import { SearchIcon } from "@/components/icons";
 import { Logo } from "@/components/icons";
 
 export const Navbar = () => {
   // Input de búsqueda (ejemplo) — sin cambios
-  const searchInput = (
-    <Input
-      aria-label="Search"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder="Search..."
-      startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="search"
-    />
-  );
+  // const searchInput = (
+  //   <Input
+  //     aria-label="Search"
+  //     classNames={{
+  //       inputWrapper: "bg-default-100",
+  //       input: "text-sm",
+  //     }}
+  //     endContent={
+  //       <Kbd className="hidden lg:inline-block" keys={["command"]}>
+  //         K
+  //       </Kbd>
+  //     }
+  //     labelPlacement="outside"
+  //     placeholder="Search..."
+  //     startContent={
+  //       <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
+  //     }
+  //     type="search"
+  //   />
+  // );
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
+    <div className="bg-gradient-to-r from-blue-400 to-gray-900 bg-opacity-70 text-white border  border-indigo-600 shadow-2xl rounded-xl p-1 transition transform hover:scale-105 hover:shadow-2xl">
+    <HeroUINavbar maxWidth="xl" position="sticky" className="rounded-lg bg-opacity-70">
       {/* Marca / Logo */}
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand className="gap-3 max-w-fit">
@@ -131,6 +132,10 @@ export const Navbar = () => {
           ))}
         </div>
       </NavbarMenu>
+      
     </HeroUINavbar>
+
+    {/* <hr /> */}
+    </div>
   );
 };
