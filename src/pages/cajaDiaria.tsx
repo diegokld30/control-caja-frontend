@@ -2,17 +2,29 @@ import DefaultLayout from "@/layouts/default";
 import { title } from "@/components/primitives";
 import { useCajaDiaria } from "@/hooks/cajaDiaria/getCajaDiaria";
 import { AdvancedGlobalTable } from "@/components/AdvancedGlobalTable";
+import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
 
+
+interface ColumnDef<T> {
+  /** Texto en la cabecera de la columna. */
+  name: string;
+  /** Clave del objeto `T` a mostrar en esa columna. */
+  uid: keyof T;
+  /** Indica si la columna permite ordenar (sort). */
+  sortable?: boolean;
+}
 // Columnas definidas según tu modelo "CajaDiaria"
-const columns = [
-  { name: "Fecha Apertura", uid: "fecha_apertura", sortable: true },
-  { name: "Fecha Cierre", uid: "fecha_cierre", sortable: true },
-  { name: "Saldo Inicial", uid: "saldo_inicial", sortable: true },
-  { name: "Saldo Final", uid: "saldo_final", sortable: true },
-  { name: "Abierta Por", uid: "abierta_por" },
-  { name: "Cerrada Por", uid: "cerrada_por" },
-  { name: "Observaciones", uid: "observaciones" },
+const columns: ColumnDef<GetCajaDiaria>[] = [
+  { name: "Fecha Apertura", uid: "fecha_apertura" as keyof GetCajaDiaria, sortable: true },
+  { name: "Fecha Cierre", uid: "fecha_cierre" as keyof GetCajaDiaria, sortable: true },
+  { name: "Saldo Inicial", uid: "saldo_inicial" as keyof GetCajaDiaria, sortable: true },
+  { name: "Saldo Final", uid: "saldo_final" as keyof GetCajaDiaria, sortable: true },
+  { name: "Abierta Por", uid: "abierta_por" as keyof GetCajaDiaria },
+  { name: "Cerrada Por", uid: "cerrada_por" as keyof GetCajaDiaria },
+  { name: "Observaciones", uid: "observaciones" as keyof GetCajaDiaria },
 ];
+
+
 
 function formatDateTime(isoString: string) {
   const date = new Date(isoString);
