@@ -46,7 +46,7 @@ export const Navbar = () => {
   // );
 
   return (
-    <div className="bg-gradient-to-r from-blue-400 to-gray-900 bg-opacity-70 text-white border  border-indigo-600 shadow-2xl rounded-xl p-1 transition transform hover:scale-105 hover:shadow-2xl">
+    <div className="bg-gradient-to-r from-blue-400 to-blue-900 bg-opacity-70 text-white border  border-indigo-600 shadow-2xl rounded-xl p-1 transition transform hover:scale-105 hover:shadow-2xl">
     <HeroUINavbar maxWidth="xl" position="sticky" className="rounded-lg bg-opacity-70">
       {/* Marca / Logo */}
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
