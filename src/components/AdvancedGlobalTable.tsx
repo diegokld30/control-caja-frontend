@@ -15,36 +15,73 @@ import {
   DropdownItem,
   Pagination,
 } from "@heroui/react";
-import { GlobalModal } from "@/components/GlobalModal"; // Importamos el modal global
+import type { Key as AriaKey } from "@react-types/shared";
+import { GlobalModal } from "@/components/GlobalModal";
 
 //
 //  Tipos e interfaces
 //
 interface ColumnDef<T> {
+  /** Texto en la cabecera de la columna. */
   name: string;
+  /** Clave del objeto T a mostrar en esa columna. */
   uid: keyof T;
+  /** Indica si la columna permite ordenar. */
   sortable?: boolean;
 }
 
 interface AdvancedGlobalTableProps<T> {
+  /** Título de la tabla. */
   title?: string;
+  /** Datos (filas) a mostrar. */
   data: T[];
+  /** Definición de columnas. */
   columns: ColumnDef<T>[];
+  /**
+   * Función opcional para personalizar cómo se dibuja la celda.
+   * Si no se provee, se mostrará como texto (`String(value)`).
+   */
   renderCell?: (item: T, columnKey: keyof T) => React.ReactNode;
+  /**
+   * Callback para dar una key única a cada fila.
+   * Si no se define, se usará JSON.stringify del item.
+   */
   getRowKey?: (item: T) => React.Key;
   /**
-   * Si quieres que un padre controle la acción de "Agregar",
-   * usa onAddNew. Si no se define, la tabla mostrará su modal interno.
+   * Callback para la acción de "Agregar".
+   * Si no se define, la tabla muestra un modal interno.
    */
   onAddNew?: () => void;
+  /**
+   * Opcional: lista de opciones para "statusFilter".
+   * Ej: [{ name: "Active", uid: "active" }, { name: "Paused", uid: "paused" }]
+   */
   statusOptions?: Array<{ name: string; uid: string }>;
 }
 
-/** Capitaliza un string */
+/** Capitaliza un string (opcional) */
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
+/**
+ * Para manejar la selección múltiple, usaremos:
+ *  - "all"
+ *  - Set<string | number>
+ *  (evitamos bigint o symbol, que generan problemas con Hero UI)
+ */
+type TableKey = string | number;
+
+/**
+ * Componente de tabla avanzada estilo Hero UI con:
+ * - Búsqueda en columnas string u objeto (con { first_name, last_name })
+ * - Selección de columnas visibles
+ * - Filtro de "status"
+ * - Ordenación (números o strings)
+ * - Paginación
+ * - Selección de filas ("all" o Set<string|number>)
+ * - Botón "Add New" (opcional)
+ */
 export function AdvancedGlobalTable<T extends Record<string, any>>(
   props: AdvancedGlobalTableProps<T>
 ) {
@@ -59,21 +96,30 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
   } = props;
 
   // --------------------
-  // Estado para el modal
+  // Estado para el modal interno (si no se define onAddNew)
   // --------------------
   const [isModalOpen, setModalOpen] = React.useState(false);
 
   // --------------------
   // Otros estados de la tabla
   // --------------------
+
+  // Búsqueda
   const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState<"all" | Set<React.Key>>(new Set([]));
+  // Selección de filas
+  const [selectedKeys, setSelectedKeys] = React.useState<"all" | Set<TableKey>>(
+    new Set<TableKey>()
+  );
+  // Columnas visibles
   const [visibleColumns, setVisibleColumns] = React.useState<Set<string>>(
     () => new Set(columns.map((c) => String(c.uid)))
   );
+  // Filtro status
   const [statusFilter, setStatusFilter] = React.useState<"all" | Set<string>>("all");
+  // Paginación
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [page, setPage] = React.useState(1);
+  // Ordenación
   const [sortDescriptor, setSortDescriptor] = React.useState<{
     column: string;
     direction: "ascending" | "descending";
@@ -82,30 +128,57 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     direction: "ascending",
   });
 
-  // Manejo de filtrado, orden, paginación... (igual que antes)
+  // Indica si hay un texto de búsqueda
   const hasSearchFilter = Boolean(filterValue);
 
+  // --------------------
+  // 1) Búsqueda
+  // --------------------
   const filteredBySearch = React.useMemo(() => {
     if (!filterValue) return data;
     const lower = filterValue.toLowerCase();
+
     return data.filter((item) =>
+      // Buscamos coincidencia en cualquier columna visible
       Array.from(visibleColumns).some((colUid) => {
-        const val = item[colUid];
+        let val = item[colUid];
+
+        // 1) Si es string
         if (typeof val === "string") {
           return val.toLowerCase().includes(lower);
         }
+
+        // 2) Si es un objeto con { first_name, last_name }
+        if (val && typeof val === "object") {
+          if ("first_name" in val && "last_name" in val) {
+            const combined = `${val.first_name} ${val.last_name}`.toLowerCase();
+            return combined.includes(lower);
+          } else {
+            // 3) Cualquier otro objeto -> JSON.stringify
+            const strVal = JSON.stringify(val).toLowerCase();
+            return strVal.includes(lower);
+          }
+        }
+
+        // 4) Caso default (números, null, etc.)
         return false;
       })
     );
   }, [data, filterValue, visibleColumns]);
 
+  // --------------------
+  // 2) Filtrado por status (opcional)
+  // --------------------
   const filteredData = React.useMemo(() => {
     if (statusFilter === "all") return filteredBySearch;
     if (!(statusFilter instanceof Set)) return filteredBySearch;
-    // Filtra asumiendo que la propiedad se llama "status"
+    // Suponemos que la propiedad "status" define el estado
     return filteredBySearch.filter((item) => statusFilter.has(String(item.status)));
   }, [filteredBySearch, statusFilter]);
 
+  // --------------------
+  // 3) Ordenación
+  // --------------------
   const sortedData = React.useMemo(() => {
     if (!sortDescriptor.column) return filteredData;
     const arr = [...filteredData];
@@ -114,20 +187,45 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
       const colKey = sortDescriptor.column;
       let first = a[colKey];
       let second = b[colKey];
+
+      // Si son objetos, convertimos a string
+      if (first && typeof first === "object") {
+        if ("first_name" in first && "last_name" in first) {
+          first = `${first.first_name} ${first.last_name}`;
+        } else {
+          first = JSON.stringify(first);
+        }
+      }
+      if (second && typeof second === "object") {
+        if ("first_name" in second && "last_name" in second) {
+          second = `${second.first_name} ${second.last_name}`;
+        } else {
+          second = JSON.stringify(second);
+        }
+      }
+
+      // Intento numérico
       const n1 = parseFloat(first);
       const n2 = parseFloat(second);
       if (!Number.isNaN(n1) && !Number.isNaN(n2)) {
         return sortDescriptor.direction === "ascending" ? n1 - n2 : n2 - n1;
       }
-      first = String(first ?? "").toLowerCase();
-      second = String(second ?? "").toLowerCase();
-      if (first < second) return sortDescriptor.direction === "ascending" ? -1 : 1;
-      if (first > second) return sortDescriptor.direction === "ascending" ? 1 : -1;
+
+      // Comparación string
+      const str1 = String(first ?? "").toLowerCase();
+      const str2 = String(second ?? "").toLowerCase();
+
+      if (str1 < str2) return sortDescriptor.direction === "ascending" ? -1 : 1;
+      if (str1 > str2) return sortDescriptor.direction === "ascending" ? 1 : -1;
       return 0;
     });
+
     return arr;
   }, [filteredData, sortDescriptor]);
 
+  // --------------------
+  // 4) Paginación
+  // --------------------
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
   const currentPageItems = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -135,29 +233,46 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     return sortedData.slice(start, end);
   }, [sortedData, page, rowsPerPage]);
 
+  // --------------------
+  // Render cell por defecto
+  // --------------------
   function defaultRenderCell(item: T, columnKey: keyof T) {
     return String(item[columnKey] ?? "");
   }
 
-  function rowKey(item: T): React.Key {
+  // --------------------
+  // rowKey
+  // --------------------
+  function rowKeyFn(item: T): React.Key {
     return getRowKey ? getRowKey(item) : JSON.stringify(item);
   }
 
   // --------------------
-  // Lógica para el botón "Agregar"
+  // Botón "Agregar"
   // --------------------
   function handleAddNew() {
-    // Si un padre maneja "Agregar", lo llamamos:
     if (onAddNew) {
       onAddNew();
     } else {
-      // De lo contrario, abrimos el modal interno
       setModalOpen(true);
     }
   }
 
   // --------------------
-  // topContent: barra búsqueda, combos, y botón Agregar
+  // Manejo de selección
+  // --------------------
+  function handleSelectionChange(keys: "all" | Iterable<AriaKey>) {
+    if (keys === "all") {
+      setSelectedKeys("all");
+    } else {
+      // Convierto a array de string|number
+      const arr = [...keys].map((k) => String(k));
+      setSelectedKeys(new Set(arr));
+    }
+  }
+
+  // --------------------
+  // topContent
   // --------------------
   const topContent = (
     <div className="flex flex-col gap-4">
@@ -165,7 +280,7 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         <Input
           isClearable
           className="w-full sm:max-w-[44%]"
-          placeholder="Buscar... "
+          placeholder="Buscar..."
           value={filterValue}
           onClear={() => setFilterValue("")}
           onValueChange={(val) => {
@@ -185,7 +300,7 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
                 closeOnSelect={false}
                 selectedKeys={statusFilter}
                 selectionMode="multiple"
-                onSelectionChange={(keys) => setStatusFilter(keys)}
+                onSelectionChange={(keys) => setStatusFilter(keys as Set<string> | "all")}
               >
                 {statusOptions.map((opt) => (
                   <DropdownItem key={opt.uid} className="capitalize">
@@ -250,7 +365,7 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
   );
 
   // --------------------
-  // bottomContent: paginación y selección
+  // bottomContent
   // --------------------
   const bottomContent = (
     <div className="py-2 px-2 flex justify-between items-center">
@@ -287,8 +402,14 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         topContent={topContent}
         topContentPlacement="outside"
         selectionMode="multiple"
-        selectedKeys={selectedKeys}
-        onSelectionChange={setSelectedKeys}
+        // Hero UI => selectedKeys?: "all" | Iterable<Key> | undefined
+        // Convertimos nuestro "all" | Set<string> a "all" | Iterable<Key>
+        selectedKeys={
+          selectedKeys === "all"
+            ? "all"
+            : (selectedKeys as unknown as Iterable<AriaKey>)
+        }
+        onSelectionChange={handleSelectionChange}
         sortDescriptor={sortDescriptor}
         onSortChange={(descriptor) => {
           setSortDescriptor({
@@ -312,12 +433,12 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         </TableHeader>
         <TableBody emptyContent="No items found" items={currentPageItems}>
           {(item) => (
-            <TableRow key={rowKey(item)}>
+            <TableRow key={getRowKey ? getRowKey(item) : JSON.stringify(item)}>
               {(columnKey) => (
                 <TableCell>
                   {renderCell
                     ? renderCell(item, columnKey as keyof T)
-                    : defaultRenderCell(item, columnKey as keyof T)}
+                    : String(item[columnKey])}
                 </TableCell>
               )}
             </TableRow>
@@ -334,7 +455,7 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         cancelLabel="Cancelar"
         onConfirm={() => {
           console.log("Guardando...");
-          // Aqui pones la lógica de "crear algo" o un form
+          // Aquí pondrías la lógica de "crear algo" o un form
         }}
       >
         <p>Aquí podrías poner un formulario o inputs para crear un nuevo elemento.</p>
