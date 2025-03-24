@@ -1,5 +1,5 @@
 // src/api/cajaDiaria/postCajaDiaria.ts
-import axios from "axios";
+import { api } from "../axiosInstance";
 
 /**
  * Define el tipo (o interfaz) para los datos que envías al POST.
@@ -21,8 +21,8 @@ export interface CajaDiariaPostData {
 export async function postCajaDiaria(
   data: CajaDiariaPostData
 ): Promise<any> {
-  const response = await axios.post(
-    "http://127.0.0.1:8000/api/cajadiaria/",
+  const response = await api.post(
+    "cajadiaria/",
     data
   );
   return response.data; // o response

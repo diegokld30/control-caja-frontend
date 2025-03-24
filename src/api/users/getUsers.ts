@@ -1,5 +1,5 @@
 // src/api/users/getUsers.ts
-import axios from "axios";
+import { api } from "../axiosInstance";
 
 export interface User {
   id: number;
@@ -10,6 +10,6 @@ export interface User {
 }
 
 export async function getUsers(): Promise<User[]> {
-  const response = await axios.get("http://127.0.0.1:8000/api/users/");
+  const response = await api.get("users/");
   return response.data;
 }

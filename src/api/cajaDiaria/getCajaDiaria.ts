@@ -1,7 +1,7 @@
-import axios from 'axios'
 import {GetCajaDiaria} from '@/types/cajaDiaria/GetCajaDiaria'
+import { api } from '../axiosInstance'
 
 export const getCajaDiaria = async (): Promise<GetCajaDiaria[]> => {
-    const response = await axios.get('http://127.0.0.1:8000/api/cajadiaria/')
+    const response = await api.get('/cajadiaria/')
     return response.data
 }

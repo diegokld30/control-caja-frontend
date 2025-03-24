@@ -7,17 +7,20 @@ import DetalleCajaPage from "@/pages/detalleCaja";
 import ProductoPage from "@/pages/producto";
 import TransaccionesPage from "@/pages/transacciones";
 import UsersPage from "@/pages/users";
+import LoginPage from "@/pages/login";
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 function App() {
   return (
     <Routes>
-      <Route element={<IndexPage />} path="/" />
-      <Route element={<CajaDiariaPage />} path="/cajaDiaria" />
-      <Route element={<CategoriaPage />} path="/categoria" />
-      <Route element={<DetalleCajaPage />} path="/detalleCaja" />
-      <Route element={<ProductoPage />} path="/producto" />
-      <Route element={<TransaccionesPage />} path="/transacciones" />
-      <Route element={<UsersPage />} path="/users" />
+      <Route element={<LoginPage />} path="/login" />
+      <Route element={<ProtectedRoute><IndexPage /></ProtectedRoute>} path="/" />
+      <Route element={<ProtectedRoute><CajaDiariaPage /></ProtectedRoute>} path="/cajaDiaria" />
+      <Route element={<ProtectedRoute><CategoriaPage /></ProtectedRoute>} path="/categoria" />
+      <Route element={<ProtectedRoute><DetalleCajaPage /></ProtectedRoute>} path="/detalleCaja" />
+      <Route element={<ProtectedRoute><ProductoPage /></ProtectedRoute>} path="/producto" />
+      <Route element={<ProtectedRoute><TransaccionesPage /></ProtectedRoute>} path="/transacciones" />
+      <Route element={<ProtectedRoute><UsersPage /></ProtectedRoute>} path="/users" />
     </Routes>
   );
 
