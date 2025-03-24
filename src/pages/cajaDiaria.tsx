@@ -13,10 +13,12 @@ import { useUsers } from "@/hooks/users/getUsers";
 import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
 import { postCajaDiaria } from "@/api/cajaDiaria/postCajaDiaria";
 
-// Para invalidar la caché tras el POST
+// React Query
 import { useQueryClient } from "@tanstack/react-query";
 
-// Column definition
+// Hero UI toasts
+import { addToast } from "@heroui/react";
+
 interface ColumnDef<T> {
   name: string;
   uid: keyof T;
@@ -39,19 +41,15 @@ function formatDateTime(isoString: string) {
   return date.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
-// Renderiza cada celda según la columna
+// Render de celdas
 function renderCell(item: any, columnKey: string) {
   const val = item[columnKey];
-
-  // Formatear fecha_apertura / fecha_cierre
   if (
     (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") &&
     typeof val === "string"
   ) {
     return formatDateTime(val);
   }
-
-  // Mostrar nombre en "abierta_por" / "cerrada_por"
   if (
     (columnKey === "abierta_por" || columnKey === "cerrada_por") &&
     val &&
@@ -59,42 +57,34 @@ function renderCell(item: any, columnKey: string) {
   ) {
     return `${val.first_name} ${val.last_name}`;
   }
-
-  // Caso default
   return String(val ?? "");
 }
 
 export default function CajaDiariaPage() {
-  // 1) Data de caja diaria (React Query)
+  // Data de caja
   const { data, isLoading, isError, error } = useCajaDiaria();
+  // Data de usuarios
+  const { data: usersData, isLoading: usersLoading, isError: usersError } = useUsers();
 
-  // 2) Data de usuarios (React Query)
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    isError: usersError,
-  } = useUsers();
-
-  // 3) Estado del modal
+  // Estado del modal
   const [isModalOpen, setModalOpen] = React.useState(false);
 
-  // 4) Estado del formulario
+  // Estado del formulario
   const [formValues, setFormValues] = React.useState({
     saldo_inicial: "",
     abierto_por: "",
-    observaciones: "Abierta",
+    observaciones: "",
   });
 
-  // 5) Convertimos usersData en un array para "heroSelect"
+  // Mapeo de usuarios para heroSelect
   const userItems =
     usersData?.map((u) => ({
       id: u.id,
       name: `${u.first_name} ${u.last_name}`,
-      // avatar: u.avatar, // si tu API no provee avatar
-      email: u.email,     // si tu API no provee email, quita esto
+      email: u.email,
     })) ?? [];
 
-  // 6) Definir los campos de formulario (heroNumber, heroSelect, etc.)
+  // Campos del formulario
   const formFields: FieldConfig[] = [
     {
       name: "saldo_inicial",
@@ -114,10 +104,10 @@ export default function CajaDiariaPage() {
     },
   ];
 
-  // Para refrescar la tabla tras POST
+  // Para refrescar la tabla
   const queryClient = useQueryClient();
 
-  // 7) Mientras carga la data, mostramos un mensaje
+  // Mientras carga
   if (isLoading || usersLoading) {
     return <DefaultLayout>Cargando Caja Diaria.</DefaultLayout>;
   }
@@ -129,33 +119,41 @@ export default function CajaDiariaPage() {
     );
   }
 
-  // 8) Al presionar “Guardar” en el modal
+  // Crear nueva caja
   async function handleConfirm() {
-    // console.log("Creando caja con:", formValues);
-
     try {
-      // Preparamos el payload para tu API
-      // Ajusta segun tu serializer
       const payload = {
-        fecha_cierre: null, // si no lo manejas en creacion
-        saldo_inicial: String(formValues.saldo_inicial), // parseFloat si deseas
-        saldo_final: null,   // o null si no se maneja
-        abierta_por: parseInt(formValues.abierto_por), // ID del user
-        cerrada_por: null,     // si no se cierra aun
+        fecha_cierre: null,
+        saldo_inicial: String(formValues.saldo_inicial),
+        saldo_final: null,
+        abierta_por: parseInt(formValues.abierto_por),
+        cerrada_por: null,
         observaciones: formValues.observaciones,
       };
 
-      // Llamamos la funcion postCajaDiaria
       await postCajaDiaria(payload);
 
-      // Cerramos el modal
+      // Cerrar modal
       setModalOpen(false);
 
-      // Refrescamos la tabla invalidando la cache
+      // Refrescar tabla
       queryClient.invalidateQueries(["cajaDiaria"]);
+
+      // Toast éxito
+      addToast({
+        title: "Caja creada",
+        description: "La caja se creó exitosamente.",
+        color: "success",
+      });
     } catch (err) {
       console.error("Error al crear caja:", err);
-      // Manejar error (toast, alert, etc.)
+
+      // Toast error
+      addToast({
+        title: "Error",
+        description: "No se pudo crear la caja.",
+        color: "danger",
+      });
     }
   }
 
@@ -163,14 +161,12 @@ export default function CajaDiariaPage() {
     <DefaultLayout>
       <h1>Cajas Diarias</h1>
 
-      {/* Tabla */}
       <AdvancedGlobalTable<GetCajaDiaria>
         title="Listado de Caja Diaria"
         data={data ?? []}
         columns={columns}
         renderCell={renderCell}
         onAddNew={() => {
-          // reset form
           setFormValues({
             saldo_inicial: "",
             abierto_por: "",
@@ -180,7 +176,6 @@ export default function CajaDiariaPage() {
         }}
       />
 
-      {/* Modal + Formulario */}
       <GlobalModal
         title="Registrar Nueva Caja"
         isOpen={isModalOpen}

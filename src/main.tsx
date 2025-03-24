@@ -1,8 +1,9 @@
+// main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "@heroui/react"; // <--- Importar ToastProvider
 
 import App from "./App.tsx";
 import { Provider } from "./provider.tsx";
@@ -13,11 +14,20 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <Provider>
-        <App />
-      </Provider>
-    </BrowserRouter>
+      <ToastProvider
+        placement="top-right"
+        toastProps={{
+          radius: "full",
+          variant: "flat",
+          timeout: 2000,
+          hideIcon: false,
+        }}
+      />
+      <BrowserRouter>
+        <Provider>
+          <App />
+        </Provider>
+      </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );
