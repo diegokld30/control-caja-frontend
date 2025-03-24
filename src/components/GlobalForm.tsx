@@ -1,5 +1,4 @@
 // src/components/GlobalForm.tsx
-import React from "react";
 import {
   Input,
   Select,
@@ -41,33 +40,30 @@ export function GlobalForm({ fields, values, onChange }: GlobalFormProps) {
           case "heroSelect": {
             const items = field.items ?? [];
             const currentVal = values[field.name];
-            const selectedKeys = currentVal ? new Set([String(currentVal)]) : new Set();
-
+          
+            // Un array con 0 o 1 elemento, dependiendo de si currentVal existe
+            // TypeScript infiere string[], que luego casteamos a Iterable<Key>
+            const selectedKeys = currentVal ? [String(currentVal)] : [];
+          
             return (
               <div key={field.name} className="flex flex-col w-full">
-                <label
-                  id={labelId}
-                  className="font-medium text-sm mb-1"
-                >
+                <label id={labelId} className="font-medium text-sm mb-1">
                   {field.label}
                 </label>
                 <Select
                   className="w-full"
                   variant="bordered"
                   selectionMode="single"
-                  selectedKeys={selectedKeys}
-                  // Asignamos aria-labelledby al ID del label
+                  selectedKeys={selectedKeys as Iterable<import("@react-types/shared").Key>}
                   aria-labelledby={labelId}
                   onSelectionChange={(keys) => {
-                    const [val] = keys as Iterable<string>;
+                    // `keys` es un Iterable<Key>, en modo single normalmente tendrá 0 o 1 elemento
+                    const [val] = [...keys] as string[];
                     onChange({ ...values, [field.name]: val });
                   }}
                 >
                   {items.map((item) => (
-                    <SelectItem
-                      key={String(item.id)}
-                      textValue={item.name}
-                    >
+                    <SelectItem key={String(item.id)} textValue={item.name}>
                       <div className="flex gap-2 items-center">
                         {item.avatar && (
                           <Avatar
@@ -80,9 +76,7 @@ export function GlobalForm({ fields, values, onChange }: GlobalFormProps) {
                         <div className="flex flex-col">
                           <span className="text-small">{item.name}</span>
                           {item.email && (
-                            <span className="text-tiny text-default-400">
-                              {item.email}
-                            </span>
+                            <span className="text-tiny text-default-400">{item.email}</span>
                           )}
                         </div>
                       </div>
@@ -92,6 +86,9 @@ export function GlobalForm({ fields, values, onChange }: GlobalFormProps) {
               </div>
             );
           }
+          
+          
+          
 
           /**
            * 2) "heroNumber": usa <NumberInput> de Hero UI
