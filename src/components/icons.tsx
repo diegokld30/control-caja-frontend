@@ -184,3 +184,94 @@ export const SearchIcon = (props: IconSvgProps) => (
     />
   </svg>
 );
+
+export const CashRegisterIcon: React.FC<IconSvgProps> = ({
+  size = 24,
+  width,
+  height,
+  ...props
+}) => {
+  return (
+    <svg
+      width={size || width}
+      height={size || height}
+      viewBox="0 0 24 24"
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      {/* 1) Pantalla superior */}
+      <rect x="4" y="2" width="16" height="4" rx="1" fill="currentColor" />
+      
+      {/* 2) Cuerpo principal */}
+      <rect x="2" y="6" width="20" height="8" rx="2" fill="currentColor" />
+      
+      {/* 3) Cajón inferior */}
+      <rect x="2" y="14" width="20" height="4" rx="1" fill="currentColor" />
+      
+      {/* 4) Líneas que simulan teclas (con menor opacidad) */}
+      <line
+        x1="6" y1="7"
+        x2="18" y2="7"
+        stroke="currentColor"
+        strokeOpacity="0.2"
+        strokeWidth="1"
+      />
+      <line
+        x1="6" y1="9"
+        x2="18" y2="9"
+        stroke="currentColor"
+        strokeOpacity="0.2"
+        strokeWidth="1"
+      />
+      <line
+        x1="6" y1="11"
+        x2="18" y2="11"
+        stroke="currentColor"
+        strokeOpacity="0.2"
+        strokeWidth="1"
+      />
+      <line
+        x1="6" y1="13"
+        x2="18" y2="13"
+        stroke="currentColor"
+        strokeOpacity="0.2"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+};
+
+export const SENAIcon: React.FC<IconSvgProps> = ({
+  size = 36, // tamaño por defecto
+  width,
+  height,
+  ...props
+}) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size || width}         // prioridad al prop size, si no, width
+      height={size || height}       // prioridad al prop size, si no, height
+      viewBox="0 0 900 600"         // viewBox original para mantener proporciones
+      preserveAspectRatio="xMidYMid meet"
+      {...props}
+    >
+      <g
+        transform="translate(0,600) scale(0.1,-0.1)"
+        fill="currentColor"         // Usa currentColor para controlarlo con CSS/Tailwind
+        stroke="none"
+      >
+        <path d="M4420 5994 c-155 -28 -259 -82 -371 -194 -71 -69 -94 -101 -127 -170 -114 -238 -88 -496 71 -705 79 -104 181 -176 316 -222 65 -23 93 -27 196 -27 106 -1 130 2 208 28 166 54 311 179 386 330 184 375 -10 822 -409 940 -55 17 -222 29 -270 20z"/>
+        <path d="M2185 4450 c-239 -17 -389 -80 -436 -185 -31 -67 -21 -136 27 -202 48 -63 185 -109 494 -163 197 -35 265 -60 265 -99 0 -54 -110 -88 -245 -77 -133 11 -190 40 -190 98 l0 28 -190 0 -190 0 0 -39 c0 -65 47 -140 110 -178 102 -62 226 -83 478 -83 393 0 612 84 638 245 15 97 -41 181 -153 233 -64 30 -128 44 -473 108 -171 32 -228 88 -129 128 26 11 71 16 132 16 115 0 182 -20 206 -61 l16 -29 178 0 177 0 0 30 c0 79 -72 153 -183 189 -116 37 -335 54 -532 41z"/>
+        <path d="M3110 4000 l0 -440 540 0 540 0 0 95 0 95 -342 2 -343 3 0 85 0 85 303 3 302 2 0 90 0 90 -302 2 -303 3 -3 68 -3 67 331 0 330 0 0 95 0 95 -525 0 -525 0 0 -440z"/>
+        <path d="M4350 4000 l0 -440 190 0 190 0 0 297 0 297 38 -44 c20 -25 102 -119 182 -211 80 -91 179 -205 220 -252 l75 -87 258 0 257 0 0 440 0 440 -190 0 -190 0 -2 -291 -3 -290 -260 290 -260 290 -252 0 -253 1 0 -440z"/>
+        <path d="M6108 4028 c-157 -227 -293 -425 -303 -440 l-17 -28 196 0 196 0 46 80 47 80 308 0 308 0 43 -80 43 -80 218 0 c172 0 217 3 211 13 -4 6 -99 152 -211 322 -113 171 -239 363 -281 427 l-77 118 -221 0 -221 0 -285 -412z m485 -116 c-102 -1 -188 0 -191 3 -5 5 58 113 146 249 l44 68 94 -158 93 -159 -186 -3z"/>
+        <path d="M1420 3105 l0 -235 888 0 887 0 52 -24 c58 -27 83 -64 83 -120 0 -43 -23 -88 -277 -526 -590 -1020 -814 -1412 -811 -1419 2 -4 80 -80 174 -169 l171 -160 116 201 c63 111 184 321 267 467 84 146 371 645 638 1110 267 465 518 902 558 972 41 70 74 130 74 133 0 3 -634 5 -1410 5 l-1410 0 0 -235z"/>
+        <path d="M4740 3335 c0 -3 66 -117 147 -253 142 -240 338 -571 958 -1622 497 -842 576 -975 584 -983 7 -7 106 82 309 278 l33 31 -532 915 c-292 503 -538 930 -546 949 -18 42 -13 119 11 155 10 15 41 37 69 51 l52 24 883 0 882 0 0 230 0 230 -1425 0 c-784 0 -1425 -2 -1425 -5z"/>
+        <path d="M4258 2447 c-204 -347 -937 -1594 -1224 -2082 l-94 -160 206 -103 c113 -57 207 -102 208 -100 1 2 162 273 357 603 619 1048 673 1138 700 1157 53 39 135 40 187 1 23 -18 135 -201 777 -1276 l289 -486 208 107 c114 59 208 111 208 116 0 5 -13 30 -29 55 -16 25 -199 327 -406 671 -208 344 -442 731 -520 860 -78 129 -249 413 -380 630 -131 217 -241 398 -244 402 -4 4 -113 -173 -243 -395z"/>
+      </g>
+    </svg>
+  );
+};
+

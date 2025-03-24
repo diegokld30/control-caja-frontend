@@ -20,7 +20,7 @@ import { NavLink } from "react-router-dom";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 // import { SearchIcon } from "@/components/icons";
-import { Logo } from "@/components/icons";
+import { SENAIcon } from "@/components/icons";
 
 export const Navbar = () => {
   // Input de búsqueda (ejemplo) — sin cambios
@@ -46,7 +46,7 @@ export const Navbar = () => {
   // );
 
   return (
-    <div className="bg-gradient-to-r from-blue-400 to-blue-900 bg-opacity-70 text-white border  border-indigo-600 shadow-2xl rounded-xl p-1 transition transform hover:scale-105 hover:shadow-2xl">
+    <div className="bg-gradient-to-r from-[#f0f0f0] to-[#dcdcdc] bg-opacity-100 text-gray-800 border border-[#c0c0c0] shadow-2xl rounded-xl p-1 transition transform hover:scale-105 hover:shadow-2xl">
     <HeroUINavbar maxWidth="xl" position="sticky" className="rounded-lg bg-opacity-70">
       {/* Marca / Logo */}
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
@@ -55,8 +55,8 @@ export const Navbar = () => {
           <NavLink
             to="/"
             className="flex justify-start items-center gap-1 text-foreground"
-          >
-            <Logo />
+          > 
+            <SENAIcon />
             <p className="font-bold text-inherit">Superete</p>
           </NavLink>
         </NavbarBrand>
