@@ -11,6 +11,10 @@ import { useUsers } from "@/hooks/users/getUsers";
 
 // Tipos
 import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
+import { postCajaDiaria } from "@/api/cajaDiaria/postCajaDiaria";
+
+// Para invalidar la caché tras el POST
+import { useQueryClient } from "@tanstack/react-query";
 
 // Column definition
 interface ColumnDef<T> {
@@ -61,10 +65,10 @@ function renderCell(item: any, columnKey: string) {
 }
 
 export default function CajaDiariaPage() {
-  // 1) Data de caja diaria
+  // 1) Data de caja diaria (React Query)
   const { data, isLoading, isError, error } = useCajaDiaria();
 
-  // 2) Data de usuarios
+  // 2) Data de usuarios (React Query)
   const {
     data: usersData,
     isLoading: usersLoading,
@@ -78,43 +82,44 @@ export default function CajaDiariaPage() {
   const [formValues, setFormValues] = React.useState({
     saldo_inicial: "",
     abierto_por: "",
-    observaciones: "",
+    observaciones: "Abierta",
   });
 
   // 5) Convertimos usersData en un array para "heroSelect"
-  //    Cada item => { id, name, avatar, email }
   const userItems =
     usersData?.map((u) => ({
       id: u.id,
       name: `${u.first_name} ${u.last_name}`,
-      // avatar: u.avatar, // si tu API no provee avatar, quita esto
-      email: u.email,   // si tu API no provee email, quita esto
+      // avatar: u.avatar, // si tu API no provee avatar
+      email: u.email,     // si tu API no provee email, quita esto
     })) ?? [];
 
-  // 6) Definir los campos de formulario, usando "heroNumber" y "heroSelect"
-  //    => ver GlobalForm.tsx con el switch/case para estos types
+  // 6) Definir los campos de formulario (heroNumber, heroSelect, etc.)
   const formFields: FieldConfig[] = [
     {
       name: "saldo_inicial",
       label: "Saldo Inicial",
-      type: "heroNumber", // Renderizará <NumberInput> de Hero UI
+      type: "heroNumber",
     },
     {
       name: "abierto_por",
       label: "Abierto por",
-      type: "heroSelect", // Renderizará <Select> de Hero UI con avatares
+      type: "heroSelect",
       items: userItems,
     },
     {
       name: "observaciones",
       label: "Observaciones",
-      type: "text", // Renderizará <Input type="text" />
+      type: "text",
     },
   ];
 
+  // Para refrescar la tabla tras POST
+  const queryClient = useQueryClient();
+
   // 7) Mientras carga la data, mostramos un mensaje
   if (isLoading || usersLoading) {
-    return <DefaultLayout>Cargando Caja Diaria y Usuarios...</DefaultLayout>;
+    return <DefaultLayout>Cargando Caja Diaria.</DefaultLayout>;
   }
   if (isError || usersError) {
     return (
@@ -126,21 +131,39 @@ export default function CajaDiariaPage() {
 
   // 8) Al presionar “Guardar” en el modal
   async function handleConfirm() {
-    console.log("Creando caja con:", formValues);
-    // Ejemplo de post:
-    // await axios.post("http://127.0.0.1:8000/api/cajadiaria/", {
-    //   saldo_inicial: formValues.saldo_inicial, // si "heroNumber" retorna string, haz parseFloat
-    //   abierta_por: parseInt(formValues.abierto_por), // ID del user
-    //   observaciones: formValues.observaciones,
-    // });
-    setModalOpen(false);
+    // console.log("Creando caja con:", formValues);
+
+    try {
+      // Preparamos el payload para tu API
+      // Ajusta segun tu serializer
+      const payload = {
+        fecha_cierre: null, // si no lo manejas en creacion
+        saldo_inicial: String(formValues.saldo_inicial), // parseFloat si deseas
+        saldo_final: null,   // o null si no se maneja
+        abierta_por: parseInt(formValues.abierto_por), // ID del user
+        cerrada_por: null,     // si no se cierra aun
+        observaciones: formValues.observaciones,
+      };
+
+      // Llamamos la funcion postCajaDiaria
+      await postCajaDiaria(payload);
+
+      // Cerramos el modal
+      setModalOpen(false);
+
+      // Refrescamos la tabla invalidando la cache
+      queryClient.invalidateQueries(["cajaDiaria"]);
+    } catch (err) {
+      console.error("Error al crear caja:", err);
+      // Manejar error (toast, alert, etc.)
+    }
   }
 
   return (
     <DefaultLayout>
       <h1>Cajas Diarias</h1>
 
-      {/* La tabla */}
+      {/* Tabla */}
       <AdvancedGlobalTable<GetCajaDiaria>
         title="Listado de Caja Diaria"
         data={data ?? []}
@@ -151,13 +174,13 @@ export default function CajaDiariaPage() {
           setFormValues({
             saldo_inicial: "",
             abierto_por: "",
-            observaciones: "Abierta",
+            observaciones: "",
           });
           setModalOpen(true);
         }}
       />
 
-      {/* El modal con el formulario */}
+      {/* Modal + Formulario */}
       <GlobalModal
         title="Registrar Nueva Caja"
         isOpen={isModalOpen}

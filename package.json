@@ -26,6 +26,7 @@
     "@heroui/system": "2.4.12",
     "@heroui/table": "^2.2.15",
     "@heroui/theme": "2.4.12",
+    "@heroui/toast": "^2.0.6",
     "@heroui/use-theme": "2.1.6",
     "@react-aria/visually-hidden": "3.8.20",
     "@react-types/shared": "3.28.0",
