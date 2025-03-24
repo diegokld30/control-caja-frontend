@@ -1,3 +1,4 @@
+// src/components/AdvancedGlobalTable.tsx
 import React from "react";
 import {
   Table,
@@ -13,74 +14,37 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  Chip,
-  User,
 } from "@heroui/react";
+import { GlobalModal } from "@/components/GlobalModal"; // Importamos el modal global
 
 //
 //  Tipos e interfaces
 //
 interface ColumnDef<T> {
-  /** Texto en la cabecera de la columna. */
   name: string;
-  /** Clave del objeto `T` a mostrar en esa columna. */
   uid: keyof T;
-  /** Indica si la columna permite ordenar (sort). */
   sortable?: boolean;
 }
 
 interface AdvancedGlobalTableProps<T> {
-  /** Título que se mostrará arriba. */
   title?: string;
-
-  /** Arreglo de datos (filas) a mostrar. */
   data: T[];
-
-  /** Definición de columnas. */
   columns: ColumnDef<T>[];
-
-  /**
-   * Función opcional para personalizar cómo se dibuja la celda.
-   * Si no se provee, se mostrará como texto (`String(value)`).
-   */
   renderCell?: (item: T, columnKey: keyof T) => React.ReactNode;
-
-  /**
-   * Callback para dar una key única a cada fila. 
-   * Si no se define, se usará JSON.stringify del item (no ideal).
-   */
   getRowKey?: (item: T) => React.Key;
-
   /**
-   * Llamado cuando el usuario hace clic en el botón "Add New" (si lo quieres).
+   * Si quieres que un padre controle la acción de "Agregar",
+   * usa onAddNew. Si no se define, la tabla mostrará su modal interno.
    */
   onAddNew?: () => void;
-
-  /**
-   * Opcional: lista de opciones para "statusFilter". 
-   * Ejemplo: 
-   *  [{ name: "Active", uid: "active" }, { name: "Paused", uid: "paused" }]
-   */
   statusOptions?: Array<{ name: string; uid: string }>;
 }
 
-/**
- * Función auxiliar para capitalizar un string
- */
+/** Capitaliza un string */
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-/**
- * Componente de tabla avanzada estilo Hero UI con:
- * - Búsqueda global en todas las columnas
- * - Selección de columnas visibles
- * - Filtro de "status" (opcional)
- * - Ordenación (sorting) en columnas con `sortable: true`
- * - Paginación
- * - Selección de filas
- * - Botón "Add New"
- */
 export function AdvancedGlobalTable<T extends Record<string, any>>(
   props: AdvancedGlobalTableProps<T>
 ) {
@@ -95,27 +59,21 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
   } = props;
 
   // --------------------
-  // Estados del componente
+  // Estado para el modal
   // --------------------
+  const [isModalOpen, setModalOpen] = React.useState(false);
 
+  // --------------------
+  // Otros estados de la tabla
+  // --------------------
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<"all" | Set<React.Key>>(new Set([]));
-
-  // Columnas visibles: por defecto, incluimos todas
   const [visibleColumns, setVisibleColumns] = React.useState<Set<string>>(
-    () => new Set(columns.map((col) => String(col.uid)))
+    () => new Set(columns.map((c) => String(c.uid)))
   );
-
-  // Si NO necesitas filtrar por "status", ignora esto. 
-  // Para filtrar varios "status", podríamos usar un Set<string>.
   const [statusFilter, setStatusFilter] = React.useState<"all" | Set<string>>("all");
-
-  // Paginación
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [page, setPage] = React.useState(1);
-
-  // Ordenación
-  // Acorde a Hero UI, Table usa {column, direction}
   const [sortDescriptor, setSortDescriptor] = React.useState<{
     column: string;
     direction: "ascending" | "descending";
@@ -124,19 +82,13 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     direction: "ascending",
   });
 
-  // --------------------
-  // Lógica de filtrado, ordenación, paginación
-  // --------------------
-
-  // Determina si hay texto a filtrar
+  // Manejo de filtrado, orden, paginación... (igual que antes)
   const hasSearchFilter = Boolean(filterValue);
 
-  // 1) Filtrado por texto (en TODAS las columnas visibles).
   const filteredBySearch = React.useMemo(() => {
     if (!filterValue) return data;
     const lower = filterValue.toLowerCase();
     return data.filter((item) =>
-      // Buscamos coincidencia en cualquier columna visible
       Array.from(visibleColumns).some((colUid) => {
         const val = item[colUid];
         if (typeof val === "string") {
@@ -147,17 +99,13 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     );
   }, [data, filterValue, visibleColumns]);
 
-  // 2) Filtrado por status (opcional)
   const filteredData = React.useMemo(() => {
     if (statusFilter === "all") return filteredBySearch;
     if (!(statusFilter instanceof Set)) return filteredBySearch;
-
-    // Suponemos que la propiedad "status" se llama "status" en el objeto T
-    // Ajusta si la propiedad se llama distinto
+    // Filtra asumiendo que la propiedad se llama "status"
     return filteredBySearch.filter((item) => statusFilter.has(String(item.status)));
   }, [filteredBySearch, statusFilter]);
 
-  // 3) Ordenación
   const sortedData = React.useMemo(() => {
     if (!sortDescriptor.column) return filteredData;
     const arr = [...filteredData];
@@ -166,27 +114,20 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
       const colKey = sortDescriptor.column;
       let first = a[colKey];
       let second = b[colKey];
-
-      // Intento numérico
       const n1 = parseFloat(first);
       const n2 = parseFloat(second);
       if (!Number.isNaN(n1) && !Number.isNaN(n2)) {
         return sortDescriptor.direction === "ascending" ? n1 - n2 : n2 - n1;
       }
-
-      // Comparación string
       first = String(first ?? "").toLowerCase();
       second = String(second ?? "").toLowerCase();
-
       if (first < second) return sortDescriptor.direction === "ascending" ? -1 : 1;
       if (first > second) return sortDescriptor.direction === "ascending" ? 1 : -1;
       return 0;
     });
-
     return arr;
   }, [filteredData, sortDescriptor]);
 
-  // 4) Paginación
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
   const currentPageItems = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -194,24 +135,33 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     return sortedData.slice(start, end);
   }, [sortedData, page, rowsPerPage]);
 
-  // --------------------
-  // Render helpers
-  // --------------------
-
   function defaultRenderCell(item: T, columnKey: keyof T) {
     return String(item[columnKey] ?? "");
   }
 
   function rowKey(item: T): React.Key {
-    // preferimos un callback del usuario
     return getRowKey ? getRowKey(item) : JSON.stringify(item);
   }
 
-  // topContent: buscador, combos, y botón "Add New"
+  // --------------------
+  // Lógica para el botón "Agregar"
+  // --------------------
+  function handleAddNew() {
+    // Si un padre maneja "Agregar", lo llamamos:
+    if (onAddNew) {
+      onAddNew();
+    } else {
+      // De lo contrario, abrimos el modal interno
+      setModalOpen(true);
+    }
+  }
+
+  // --------------------
+  // topContent: barra búsqueda, combos, y botón Agregar
+  // --------------------
   const topContent = (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between gap-3 items-end">
-        {/* Búsqueda */}
         <Input
           isClearable
           className="w-full sm:max-w-[44%]"
@@ -225,7 +175,6 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         />
 
         <div className="flex gap-3">
-          {/* Filtro de "status" */}
           {statusOptions.length > 0 && (
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
@@ -247,7 +196,6 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
             </Dropdown>
           )}
 
-          {/* Selección de columnas visibles */}
           <Dropdown>
             <DropdownTrigger className="hidden sm:flex">
               <Button variant="flat">Columnas ▼</Button>
@@ -259,7 +207,6 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
               selectionMode="multiple"
               onSelectionChange={(keys) => {
                 if (keys === "all") {
-                  // signfica que se seleccionaron todas
                   setVisibleColumns(new Set(columns.map((c) => String(c.uid))));
                 } else {
                   setVisibleColumns(keys as Set<string>);
@@ -274,16 +221,12 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
             </DropdownMenu>
           </Dropdown>
 
-          {/* Botón "Add New" */}
-          {onAddNew && (
-            <Button color="primary" onPress={onAddNew}>
-              Agregar
-            </Button>
-          )}
+          <Button color="primary" onPress={handleAddNew}>
+            Agregar
+          </Button>
         </div>
       </div>
 
-      {/* Info (total items) y selección de "rows per page" */}
       <div className="flex justify-between items-center">
         <span className="text-default-400 text-small">
           Total {sortedData.length} items
@@ -306,7 +249,9 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
     </div>
   );
 
+  // --------------------
   // bottomContent: paginación y selección
+  // --------------------
   const bottomContent = (
     <div className="py-2 px-2 flex justify-between items-center">
       <Pagination
@@ -341,11 +286,9 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         bottomContentPlacement="outside"
         topContent={topContent}
         topContentPlacement="outside"
-        // Selección de filas
         selectionMode="multiple"
         selectedKeys={selectedKeys}
         onSelectionChange={setSelectedKeys}
-        // Sorting
         sortDescriptor={sortDescriptor}
         onSortChange={(descriptor) => {
           setSortDescriptor({
@@ -355,7 +298,6 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
         }}
       >
         <TableHeader
-          // Solo mostramos las columnas que estén en `visibleColumns`
           columns={columns.filter((col) => visibleColumns.has(String(col.uid)))}
         >
           {(column) => (
@@ -368,7 +310,6 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
             </TableColumn>
           )}
         </TableHeader>
-
         <TableBody emptyContent="No items found" items={currentPageItems}>
           {(item) => (
             <TableRow key={rowKey(item)}>
@@ -383,6 +324,21 @@ export function AdvancedGlobalTable<T extends Record<string, any>>(
           )}
         </TableBody>
       </Table>
+
+      {/** Modal interno que se abre al hacer clic en “Agregar”, si onAddNew no está definido */}
+      <GlobalModal
+        title="Registrar Nuevo"
+        isOpen={isModalOpen}
+        onOpenChange={setModalOpen}
+        confirmLabel="Guardar"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          console.log("Guardando...");
+          // Aqui pones la lógica de "crear algo" o un form
+        }}
+      >
+        <p>Aquí podrías poner un formulario o inputs para crear un nuevo elemento.</p>
+      </GlobalModal>
     </div>
   );
 }
