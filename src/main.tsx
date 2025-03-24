@@ -15,7 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ToastProvider
-        placement="top-right"
+        placement="top-center"
         toastProps={{
           radius: "full",
           variant: "flat",

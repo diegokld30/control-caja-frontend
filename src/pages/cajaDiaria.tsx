@@ -159,18 +159,19 @@ export default function CajaDiariaPage() {
 
   return (
     <DefaultLayout>
-      <h1>Cajas Diarias</h1>
+      
 
       <AdvancedGlobalTable<GetCajaDiaria>
-        title="Listado de Caja Diaria"
+        title="Historial de cajas"
         data={data ?? []}
         columns={columns}
         renderCell={renderCell}
+        // Si se quieren dar valores por defecto se modifica esto.
         onAddNew={() => {
           setFormValues({
             saldo_inicial: "",
             abierto_por: "",
-            observaciones: "",
+            observaciones: "Abierta",
           });
           setModalOpen(true);
         }}
