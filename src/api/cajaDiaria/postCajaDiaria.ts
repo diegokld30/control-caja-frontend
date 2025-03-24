@@ -7,10 +7,10 @@ import { api } from "../axiosInstance";
  */
 export interface CajaDiariaPostData {
   fecha_cierre: string | null;
-  saldo_inicial: string;
-  saldo_final: string;
+  saldo_inicial: string | null;
+  saldo_final: string | null;
   abierta_por: number;
-  cerrada_por: number;
+  cerrada_por: number | null;
   observaciones: string;
 }
 

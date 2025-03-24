@@ -61,6 +61,13 @@ function renderCell(item: any, columnKey: string) {
 }
 
 export default function CajaDiariaPage() {
+  function handleFormChange(newValues: Record<string, any>) {
+    // Queremos combinarlo con el estado anterior
+    setFormValues((prev) => ({
+      ...prev,
+      ...newValues,
+    }));
+  }
   // Data de caja
   const { data, isLoading, isError, error } = useCajaDiaria();
   // Data de usuarios
@@ -137,7 +144,7 @@ export default function CajaDiariaPage() {
       setModalOpen(false);
 
       // Refrescar tabla
-      queryClient.invalidateQueries(["cajaDiaria"]);
+      queryClient.invalidateQueries({ queryKey:["cajaDiaria"]});
 
       // Toast éxito
       addToast({
@@ -188,7 +195,7 @@ export default function CajaDiariaPage() {
         <GlobalForm
           fields={formFields}
           values={formValues}
-          onChange={setFormValues}
+          onChange={handleFormChange}
         />
       </GlobalModal>
     </DefaultLayout>
