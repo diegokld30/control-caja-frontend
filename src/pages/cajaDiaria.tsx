@@ -5,133 +5,154 @@ import { AdvancedGlobalTable } from "@/components/AdvancedGlobalTable";
 import { GlobalModal } from "@/components/GlobalModal";
 import { GlobalForm, FieldConfig } from "@/components/GlobalForm";
 
-// Hooks
 import { useCajaDiaria } from "@/hooks/cajaDiaria/getCajaDiaria";
 import { useUsers } from "@/hooks/users/getUsers";
-
-// Tipos
+import { useUserMe } from "@/hooks/users/getUserMe"; // <-- nuestro hook
 import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
 import { postCajaDiaria } from "@/api/cajaDiaria/postCajaDiaria";
 
-// React Query
 import { useQueryClient } from "@tanstack/react-query";
-
-// Hero UI toasts
-import { addToast, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
+import {
+  addToast,
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@heroui/react";
 import { VerticalDotsIcon } from "@/components/icons";
 
 interface ColumnDef<T> {
   name: string;
-  uid: keyof T;
+  uid: keyof T | "acciones";
   sortable?: boolean;
 }
 
 const columns: ColumnDef<GetCajaDiaria>[] = [
   { name: "Fecha Apertura", uid: "fecha_apertura", sortable: true },
-  { name: "Fecha Cierre",   uid: "fecha_cierre",   sortable: true },
-  { name: "Saldo Inicial",  uid: "saldo_inicial",  sortable: true },
-  { name: "Saldo Final",    uid: "saldo_final",    sortable: true },
-  { name: "Abierta Por",    uid: "abierta_por" },
-  { name: "Cerrada Por",    uid: "cerrada_por" },
-  { name: "Observaciones",  uid: "observaciones" },
-  { name: "Acciones",  uid: "acciones" },
+  { name: "Fecha Cierre", uid: "fecha_cierre", sortable: true },
+  { name: "Saldo Inicial", uid: "saldo_inicial", sortable: true },
+  { name: "Saldo Final", uid: "saldo_final", sortable: true },
+  { name: "Abierta Por", uid: "abierta_por" },
+  { name: "Cerrada Por", uid: "cerrada_por" },
+  { name: "Observaciones", uid: "observaciones" },
+  { name: "Acciones", uid: "acciones" },
 ];
 
-// Helper para formatear fecha
 function formatDateTime(isoString: string) {
   const date = new Date(isoString);
   return date.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
-// Render de celdas
-// 1) Define la columna "acciones"
-
-
-// 2) Ajusta `renderCell` para manejar la columna de acciones
-function renderCell(item: any, columnKey: string) {
-  if (columnKey === "acciones") {
-    return (
-      <div className="relative flex justify-end items-center gap-2">
-        <Dropdown className="bg-background border-1 border-default-200">
-          <DropdownTrigger>
-            <Button isIconOnly radius="full" size="sm" variant="light">
-              <VerticalDotsIcon className="text-default-400" />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu>
-            <DropdownItem key="view" onPress={() => handleView(item)}>
-              View
-            </DropdownItem>
-            <DropdownItem key="edit" onPress={() => handleEdit(item)}>
-              Edit
-            </DropdownItem>
-            <DropdownItem key="delete" onPress={() => handleDelete(item)}>
-              Delete
-            </DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
-      </div>
-    );
-  }
-
-  // Resto de tu lógica para otras columnas (fechas, usuarios, etc.)
-  const val = item[columnKey];
-  if (
-    (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") &&
-    typeof val === "string"
-  ) {
-    return formatDateTime(val);
-  }
-  if (
-    (columnKey === "abierta_por" || columnKey === "cerrada_por") &&
-    val &&
-    typeof val === "object"
-  ) {
-    return `${val.first_name} ${val.last_name}`;
-  }
-  return String(val ?? "");
-}
-
-// 3) Define las funciones
-function handleView(item: GetCajaDiaria) {
-  console.log("View item:", item);
-  // Lógica de vista detallada
-}
-
-function handleEdit(item: GetCajaDiaria) {
-  console.log("Edit item:", item);
-  // Lógica de edición
-}
-
-function handleDelete(item: GetCajaDiaria) {
-  console.log("Delete item:", item);
-  // Lógica de borrado
-}
-
 export default function CajaDiariaPage() {
-  function handleFormChange(newValues: Record<string, any>) {
-    // Queremos combinarlo con el estado anterior
-    setFormValues((prev) => ({
-      ...prev,
-      ...newValues,
-    }));
-  }
-  // Data de caja
+  const queryClient = useQueryClient();
+
+  // 1) Obtenemos data de la caja
   const { data, isLoading, isError, error } = useCajaDiaria();
-  // Data de usuarios
+
+  // 2) Obtenemos data de los usuarios
   const { data: usersData, isLoading: usersLoading, isError: usersError } = useUsers();
 
-  // Estado del modal
-  const [isModalOpen, setModalOpen] = React.useState(false);
+  // 3) Obtenemos data del usuario logueado (para saber su rol)
+  const {
+    data: userMe,
+    isLoading: userMeLoading,
+    isError: userMeError,
+  } = useUserMe();
 
-  // Estado del formulario
+  // 4) Estado del modal (nueva caja)
+  const [isModalOpen, setModalOpen] = React.useState(false);
   const [formValues, setFormValues] = React.useState({
     saldo_inicial: "",
     abierto_por: "",
     observaciones: "",
   });
 
-  // Mapeo de usuarios para heroSelect
+  function handleFormChange(newValues: Record<string, any>) {
+    setFormValues((prev) => ({ ...prev, ...newValues }));
+  }
+
+  // 5) Manejo de loading / error
+  if (isLoading || usersLoading || userMeLoading) {
+    return <DefaultLayout>Cargando Caja Diaria...</DefaultLayout>;
+  }
+  if (isError || usersError || userMeError) {
+    return (
+      <DefaultLayout>
+        Error al cargar data: {String(error || usersError || userMeError)}
+      </DefaultLayout>
+    );
+  }
+
+  // 6) Funciones de acciones
+  function handleView(item: GetCajaDiaria) {
+    console.log("Ver detalles:", item);
+  }
+  function handleEdit(item: GetCajaDiaria) {
+    console.log("Cerrar caja:", item);
+  }
+  function handleDelete(item: GetCajaDiaria) {
+    console.log("Eliminar caja:", item);
+    // Lógica de borrado
+  }
+
+  // 7) Definir renderCell adentro, para usar userMe?.rol
+  const renderCell = (item: GetCajaDiaria, columnKey: string) => {
+    if (columnKey === "acciones") {
+      return (
+        <div className="relative flex justify-end items-center gap-2">
+          <Dropdown className="bg-background border-1 border-default-200">
+            <DropdownTrigger>
+              <Button isIconOnly radius="full" size="sm" variant="light">
+                <VerticalDotsIcon className="text-default-400" />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu>
+              <DropdownItem key="view" onPress={() => handleView(item)}>
+                Ver detalles
+              </DropdownItem>
+
+              {/* Condicional si el rol es "Administrador" */}
+              {userMe?.rol === "administrador" ? (
+                <DropdownItem key="edit" onPress={() => handleEdit(item)}>
+                Cerrar caja
+              </DropdownItem>
+              ): null}
+
+              {/* Condicional si el rol es "Administrador" */}
+              
+              {userMe?.rol === "administrador" ? (
+                <DropdownItem key="delete" onPress={() => handleDelete(item)}>
+                  Eliminar
+                </DropdownItem>
+              ) : null}
+            </DropdownMenu>
+          </Dropdown>
+        </div>
+      );
+    }
+    console.log(userMe?.rol);
+
+    // Fechas
+    const val = item[columnKey as keyof GetCajaDiaria];
+    if (
+      (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") &&
+      typeof val === "string"
+    ) {
+      return formatDateTime(val);
+    }
+    // Abierta/Cerrada por
+    if (
+      (columnKey === "abierta_por" || columnKey === "cerrada_por") &&
+      val &&
+      typeof val === "object"
+    ) {
+      return `${val.first_name} ${val.last_name}`;
+    }
+    return String(val ?? "");
+  };
+
+  // 8) Mapeo de usuarios para heroSelect
   const userItems =
     usersData?.map((u) => ({
       id: u.id,
@@ -139,7 +160,6 @@ export default function CajaDiariaPage() {
       email: u.email,
     })) ?? [];
 
-  // Campos del formulario
   const formFields: FieldConfig[] = [
     {
       name: "saldo_inicial",
@@ -159,22 +179,7 @@ export default function CajaDiariaPage() {
     },
   ];
 
-  // Para refrescar la tabla
-  const queryClient = useQueryClient();
-
-  // Mientras carga
-  if (isLoading || usersLoading) {
-    return <DefaultLayout>Cargando Caja Diaria.</DefaultLayout>;
-  }
-  if (isError || usersError) {
-    return (
-      <DefaultLayout>
-        Error al cargar data: {String(error || usersError)}
-      </DefaultLayout>
-    );
-  }
-
-  // Crear nueva caja
+  // 9) Crear nueva caja
   async function handleConfirm() {
     try {
       const payload = {
@@ -187,14 +192,9 @@ export default function CajaDiariaPage() {
       };
 
       await postCajaDiaria(payload);
-
-      // Cerrar modal
       setModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["cajaDiaria"] });
 
-      // Refrescar tabla
-      queryClient.invalidateQueries({ queryKey:["cajaDiaria"]});
-
-      // Toast éxito
       addToast({
         title: "Caja creada",
         description: "La caja se creó exitosamente.",
@@ -202,8 +202,6 @@ export default function CajaDiariaPage() {
       });
     } catch (err) {
       console.error("Error al crear caja:", err);
-
-      // Toast error
       addToast({
         title: "Error",
         description: "No se pudo crear la caja.",
@@ -214,14 +212,11 @@ export default function CajaDiariaPage() {
 
   return (
     <DefaultLayout>
-      
-
       <AdvancedGlobalTable<GetCajaDiaria>
         title="Historial de cajas"
         data={data ?? []}
         columns={columns}
         renderCell={renderCell}
-        // Si se quieren dar valores por defecto se modifica esto.
         onAddNew={() => {
           setFormValues({
             saldo_inicial: "",
