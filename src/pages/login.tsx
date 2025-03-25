@@ -61,7 +61,8 @@ export default function LoginPage() {
               removeWrapper
               alt="Relaxing app background"
               className="w-full h-full object-cover"
-              src="https://heroui.com/images/card-example-3.jpeg"
+              src="card-example-3.jpeg"
+              // src="https://heroui.com/images/card-example-3.jpeg"
               // src="https://heroui.com/images/card-example-5.jpeg"
               // src="./carrito.svg"
             />
