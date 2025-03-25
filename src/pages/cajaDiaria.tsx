@@ -17,7 +17,8 @@ import { postCajaDiaria } from "@/api/cajaDiaria/postCajaDiaria";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Hero UI toasts
-import { addToast } from "@heroui/react";
+import { addToast, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
+import { VerticalDotsIcon } from "@/components/icons";
 
 interface ColumnDef<T> {
   name: string;
@@ -33,6 +34,7 @@ const columns: ColumnDef<GetCajaDiaria>[] = [
   { name: "Abierta Por",    uid: "abierta_por" },
   { name: "Cerrada Por",    uid: "cerrada_por" },
   { name: "Observaciones",  uid: "observaciones" },
+  { name: "Acciones",  uid: "acciones" },
 ];
 
 // Helper para formatear fecha
@@ -42,7 +44,37 @@ function formatDateTime(isoString: string) {
 }
 
 // Render de celdas
+// 1) Define la columna "acciones"
+
+
+// 2) Ajusta `renderCell` para manejar la columna de acciones
 function renderCell(item: any, columnKey: string) {
+  if (columnKey === "acciones") {
+    return (
+      <div className="relative flex justify-end items-center gap-2">
+        <Dropdown className="bg-background border-1 border-default-200">
+          <DropdownTrigger>
+            <Button isIconOnly radius="full" size="sm" variant="light">
+              <VerticalDotsIcon className="text-default-400" />
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu>
+            <DropdownItem key="view" onPress={() => handleView(item)}>
+              View
+            </DropdownItem>
+            <DropdownItem key="edit" onPress={() => handleEdit(item)}>
+              Edit
+            </DropdownItem>
+            <DropdownItem key="delete" onPress={() => handleDelete(item)}>
+              Delete
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </div>
+    );
+  }
+
+  // Resto de tu lógica para otras columnas (fechas, usuarios, etc.)
   const val = item[columnKey];
   if (
     (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") &&
@@ -58,6 +90,22 @@ function renderCell(item: any, columnKey: string) {
     return `${val.first_name} ${val.last_name}`;
   }
   return String(val ?? "");
+}
+
+// 3) Define las funciones
+function handleView(item: GetCajaDiaria) {
+  console.log("View item:", item);
+  // Lógica de vista detallada
+}
+
+function handleEdit(item: GetCajaDiaria) {
+  console.log("Edit item:", item);
+  // Lógica de edición
+}
+
+function handleDelete(item: GetCajaDiaria) {
+  console.log("Delete item:", item);
+  // Lógica de borrado
 }
 
 export default function CajaDiariaPage() {

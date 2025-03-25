@@ -7,4 +7,5 @@ export type GetCajaDiaria = {
     abierta_por: number | { first_name: string; last_name: string } | null ;
     cerrada_por: { first_name: string; last_name: string } | null;
     observaciones: string ;
+    acciones: string | null
 }
