@@ -5,8 +5,40 @@ import DefaultLayout from "@/layouts/default";
 import { useUserMe } from "@/hooks/users/getUserMe";
 import { useCajaDiaria } from "@/hooks/cajaDiaria/useCajaDiaria";
 import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
+// import { Button } from "@heroui/button";
+import React from "react";
+import { Spinner, Button, addToast } from "@heroui/react";
 
 export default function IndexPage() {
+  const [loading, setLoading] = React.useState(false);
+
+  function handleLogout() {
+    setLoading(true);
+    try {
+      // Limpia tokens del localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+  
+      addToast({
+        title: "Sesión finalizada",
+        description: "Has cerrado sesión exitosamente",
+        color: "success",
+      });
+  
+      // Opcionalmente, redirige al usuario a la página de login
+      window.location.href = "/login";  // ajusta según tu ruta de login
+    } catch (error) {
+      console.error("Error en cierre de sesión:", error);
+      addToast({
+        title: "Error",
+        description: "Hubo un problema al cerrar sesión",
+        color: "danger",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+  
   // Consultas
   const {
     data: userData,
@@ -72,6 +104,22 @@ export default function IndexPage() {
                 Controla y monitorea tu caja diaria en tiempo real.
               </p>
             </div>
+            <Button
+              disableRipple
+              className="relative overflow-visible rounded-full hover:-translate-y-1 px-12 shadow-xl bg-violet-400 text-white after:content-[''] after:absolute after:rounded-full after:inset-0 after:bg-background/40 after:z-[-1] after:transition after:!duration-500 hover:after:scale-150 hover:after:opacity-0"
+              isDisabled={loading}
+              size="lg"
+              onPress={handleLogout}
+            >
+              {loading ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Cerrar sesión...
+                </>
+              ) : (
+                "Cerrar sesión"
+              )}
+            </Button>
           </div>
         </header>
 
