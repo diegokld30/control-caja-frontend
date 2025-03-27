@@ -8,9 +8,10 @@ import { GlobalForm, FieldConfig } from "@/components/GlobalForm";
 import { useCategoria } from "@/hooks/categoria/getCategoria";
 import { useUsers } from "@/hooks/users/getUsers";
 import { useUserMe } from "@/hooks/users/getUserMe";
-import { GetCategoria } from "@/types/categoria/GetCategoria";
-import { CategoriaPostData } from "@/api/categoria/postCategoria";
-import { updateCategoria } from "@/api/categoria/putCategoria"; // Función para actualizar
+import { GetCategoria } from "@/types/categoria/GetCategoria"; // Para leer
+import { CategoriaPostData } from "@/api/categoria/postCategoria"; // Para insertar
+import { updateCategoria } from "@/api/categoria/putCategoria"; // Para actualizar
+import { deleteCategoria } from "@/api/categoria/deleteCategoria"; // Para eliminar
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -42,7 +43,7 @@ export default function CategoriaPage() {
   const { data, isLoading, isError, error } = useCategoria();
 
   // 2) Obtener data de usuarios
-  const { data: usersData, isLoading: usersLoading, isError: usersError } = useUsers();
+  const { isLoading: usersLoading, isError: usersError } = useUsers();
 
   // 3) Obtener data del usuario logueado (para conocer su rol)
   const { data: userMe, isLoading: userMeLoading, isError: userMeError } = useUserMe();
@@ -52,6 +53,10 @@ export default function CategoriaPage() {
   const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
   const [isUpdateModalOpen, setUpdateModalOpen] = React.useState(false);
   const [isModalOpen, setModalOpen] = React.useState(false);
+
+  // Nuevo estado para el modal de eliminación
+  const [itemToDelete, setItemToDelete] = React.useState<GetCategoria | null>(null);
+  const [isDeleteModalOpen, setDeleteModalOpen] = React.useState(false);
 
   // 5) Estado para los valores del formulario (para crear y actualizar)
   const [formValues, setFormValues] = React.useState({
@@ -89,48 +94,70 @@ export default function CategoriaPage() {
     setUpdateModalOpen(true);
   }
 
+  // Para eliminar: en lugar de usar window.confirm, abrimos un modal personalizado
   function handleDelete(item: GetCategoria) {
-    console.log("Eliminar categoría:", item);
-    // Aquí implementa la lógica de borrado si lo requieres.
+    setItemToDelete(item);
+    setDeleteModalOpen(true);
   }
 
-  // 8) Definir renderCell para la tabla
+  // Función que se ejecuta cuando se confirma la eliminación en el modal
+  async function handleDeleteConfirm() {
+    if (!itemToDelete) return;
+    try {
+      await deleteCategoria(itemToDelete.id, { nombre: itemToDelete.nombre });
+      setDeleteModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["categoria"] });
+      addToast({
+        title: "Categoría eliminada",
+        description: "La categoría se eliminó correctamente.",
+        color: "success",
+      });
+    } catch (error) {
+      console.error("Error al eliminar la categoría:", error);
+      addToast({
+        title: "Error",
+        description: "No se pudo eliminar la categoría.",
+        color: "danger",
+      });
+    }
+  }
+
+  // 8) Definir renderCell para la tabla (NO se cambia el switch)
   const renderCell = (item: GetCategoria, columnKey: string) => {
     switch (columnKey) {
       case "nombre":
         return item.nombre;
-        case "acciones":
-          return (
-            <div className="relative flex justify-end items-center gap-2">
-              <Dropdown className="bg-background border-1 border-default-200">
-                <DropdownTrigger>
-                  <Button isIconOnly radius="full" size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-400" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem key="view" onPress={() => handleView(item)}>
-                    Ver detalles
+      case "acciones":
+        return (
+          <div className="relative flex justify-end items-center gap-2">
+            <Dropdown className="bg-background border-1 border-default-200">
+              <DropdownTrigger>
+                <Button isIconOnly radius="full" size="sm" variant="light">
+                  <VerticalDotsIcon className="text-default-400" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="view" onPress={() => handleView(item)}>
+                  Ver detalles
+                </DropdownItem>
+
+                {/* Condicional si el rol es "Administrador" */}
+                {userMe?.rol === "administrador" ? (
+                  <DropdownItem key="edit" onPress={() => handleEdit(item)}>
+                    Actualizar categoria
                   </DropdownItem>
-  
-                  {/* Condicional si el rol es "Administrador" */}
-                  {userMe?.rol === "administrador" ? (
-                    <DropdownItem key="edit" onPress={() => handleEdit(item)}>
-                      Actualizar categoria
-                    </DropdownItem>
-                  ) : null}
-  
-                  {/* Condicional si el rol es "Administrador" */}
-  
-                  {userMe?.rol === "administrador" ? (
-                    <DropdownItem key="delete" onPress={() => handleDelete(item)}>
-                      Eliminar categoria
-                    </DropdownItem>
-                  ) : null}
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-          );
+                ) : null}
+
+                {/* Condicional si el rol es "Administrador" */}
+                {userMe?.rol === "administrador" ? (
+                  <DropdownItem key="delete" onPress={() => handleDelete(item)}>
+                    Eliminar categoria
+                  </DropdownItem>
+                ) : null}
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
       default:
         return null;
     }
@@ -235,11 +262,7 @@ export default function CategoriaPage() {
         cancelLabel="Cancelar"
         onConfirm={handleConfirm}
       >
-        <GlobalForm
-          fields={formFields}
-          values={formValues}
-          onChange={handleFormChange}
-        />
+        <GlobalForm fields={formFields} values={formValues} onChange={handleFormChange} />
       </GlobalModal>
 
       {/* Modal para ver detalles de la categoría */}
@@ -252,11 +275,7 @@ export default function CategoriaPage() {
         onConfirm={() => setDetailModalOpen(false)}
       >
         {selectedCategoria && (
-          <GlobalForm
-            fields={detailFields}
-            values={detailValues}
-            onChange={() => {}}
-          />
+          <GlobalForm fields={detailFields} values={detailValues} onChange={() => {}} />
         )}
       </GlobalModal>
 
@@ -269,11 +288,26 @@ export default function CategoriaPage() {
         cancelLabel="Cancelar"
         onConfirm={handleUpdateConfirm}
       >
-        <GlobalForm
-          fields={formFields}
-          values={formValues}
-          onChange={handleFormChange}
-        />
+        <GlobalForm fields={formFields} values={formValues} onChange={handleFormChange} />
+      </GlobalModal>
+
+      {/* Modal para confirmar eliminación */}
+      <GlobalModal
+        title="Confirmar eliminación"
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleDeleteConfirm}
+      >
+        <div className="p-4">
+          {itemToDelete && (
+            <p>
+              ¿Está seguro de eliminar la categoría{" "}
+              <strong>{itemToDelete.nombre}</strong>?
+            </p>
+          )}
+        </div>
       </GlobalModal>
     </DefaultLayout>
   );
