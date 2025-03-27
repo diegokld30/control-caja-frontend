@@ -7,7 +7,7 @@ import { GlobalForm, FieldConfig } from "@/components/GlobalForm";
 
 import { useCajaDiaria } from "@/hooks/cajaDiaria/getCajaDiaria";
 import { useUsers } from "@/hooks/users/getUsers";
-import { useUserMe } from "@/hooks/users/getUserMe"; // <-- nuestro hook
+import { useUserMe } from "@/hooks/users/getUserMe";
 import { GetCajaDiaria } from "@/types/cajaDiaria/GetCajaDiaria";
 import { postCajaDiaria } from "@/api/cajaDiaria/postCajaDiaria";
 
@@ -22,6 +22,7 @@ import {
 } from "@heroui/react";
 import { VerticalDotsIcon } from "@/components/icons";
 
+// 1) Column definition
 interface ColumnDef<T> {
   name: string;
   uid: keyof T | "acciones";
@@ -30,16 +31,18 @@ interface ColumnDef<T> {
 
 const columns: ColumnDef<GetCajaDiaria>[] = [
   { name: "Fecha Apertura", uid: "fecha_apertura", sortable: true },
-  { name: "Fecha Cierre", uid: "fecha_cierre", sortable: true },
-  { name: "Saldo Inicial", uid: "saldo_inicial", sortable: true },
-  { name: "Saldo Final", uid: "saldo_final", sortable: true },
-  { name: "Abierta Por", uid: "abierta_por" },
-  { name: "Cerrada Por", uid: "cerrada_por" },
-  { name: "Observaciones", uid: "observaciones" },
-  { name: "Acciones", uid: "acciones" },
+  { name: "Fecha Cierre",   uid: "fecha_cierre",   sortable: true },
+  { name: "Saldo Inicial",  uid: "saldo_inicial",  sortable: true },
+  { name: "Saldo Final",    uid: "saldo_final",    sortable: true },
+  { name: "Abierta Por",    uid: "abierta_por" },
+  { name: "Cerrada Por",    uid: "cerrada_por" },
+  { name: "Observaciones",  uid: "observaciones" },
+  { name: "Acciones",       uid: "acciones" },
 ];
 
-function formatDateTime(isoString: string) {
+// Helper para formatear fecha (aceptamos string | null)
+function formatDateTime(isoString: string | null) {
+  if (!isoString) return "";
   const date = new Date(isoString);
   return date.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
@@ -47,20 +50,12 @@ function formatDateTime(isoString: string) {
 export default function CajaDiariaPage() {
   const queryClient = useQueryClient();
 
-  // 1) Obtenemos data de la caja
+  // 2) Data: cajas, usuarios, userMe
   const { data, isLoading, isError, error } = useCajaDiaria();
-
-  // 2) Obtenemos data de los usuarios
   const { data: usersData, isLoading: usersLoading, isError: usersError } = useUsers();
+  const { data: userMe, isLoading: userMeLoading, isError: userMeError } = useUserMe();
 
-  // 3) Obtenemos data del usuario logueado (para saber su rol)
-  const {
-    data: userMe,
-    isLoading: userMeLoading,
-    isError: userMeError,
-  } = useUserMe();
-
-  // 4) Estado del modal (nueva caja)
+  // 3) Modal para crear nueva caja
   const [isModalOpen, setModalOpen] = React.useState(false);
   const [formValues, setFormValues] = React.useState({
     saldo_inicial: "",
@@ -71,6 +66,10 @@ export default function CajaDiariaPage() {
   function handleFormChange(newValues: Record<string, any>) {
     setFormValues((prev) => ({ ...prev, ...newValues }));
   }
+
+  // 4) Modal para ver detalles de una caja existente
+  const [selectedCaja, setSelectedCaja] = React.useState<GetCajaDiaria | null>(null);
+  const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
 
   // 5) Manejo de loading / error
   if (isLoading || usersLoading || userMeLoading) {
@@ -86,73 +85,22 @@ export default function CajaDiariaPage() {
 
   // 6) Funciones de acciones
   function handleView(item: GetCajaDiaria) {
-    console.log("Ver detalles:", item);
+    // console.log("Ver detalles:", item);
+    setSelectedCaja(item);
+    setDetailModalOpen(true);
   }
+
   function handleEdit(item: GetCajaDiaria) {
     console.log("Cerrar caja:", item);
+    // Podrías abrir otro modal o reusar uno
   }
+
   function handleDelete(item: GetCajaDiaria) {
     console.log("Eliminar caja:", item);
     // Lógica de borrado
   }
 
-  // 7) Definir renderCell adentro, para usar userMe?.rol
-  const renderCell = (item: GetCajaDiaria, columnKey: string) => {
-    if (columnKey === "acciones") {
-      return (
-        <div className="relative flex justify-end items-center gap-2">
-          <Dropdown className="bg-background border-1 border-default-200">
-            <DropdownTrigger>
-              <Button isIconOnly radius="full" size="sm" variant="light">
-                <VerticalDotsIcon className="text-default-400" />
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu>
-              <DropdownItem key="view" onPress={() => handleView(item)}>
-                Ver detalles
-              </DropdownItem>
-
-              {/* Condicional si el rol es "Administrador" */}
-              {userMe?.rol === "administrador" ? (
-                <DropdownItem key="edit" onPress={() => handleEdit(item)}>
-                Cerrar caja
-              </DropdownItem>
-              ): null}
-
-              {/* Condicional si el rol es "Administrador" */}
-              
-              {userMe?.rol === "administrador" ? (
-                <DropdownItem key="delete" onPress={() => handleDelete(item)}>
-                  Eliminar
-                </DropdownItem>
-              ) : null}
-            </DropdownMenu>
-          </Dropdown>
-        </div>
-      );
-    }
-    console.log(userMe?.rol);
-
-    // Fechas
-    const val = item[columnKey as keyof GetCajaDiaria];
-    if (
-      (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") &&
-      typeof val === "string"
-    ) {
-      return formatDateTime(val);
-    }
-    // Abierta/Cerrada por
-    if (
-      (columnKey === "abierta_por" || columnKey === "cerrada_por") &&
-      val &&
-      typeof val === "object"
-    ) {
-      return `${val.first_name} ${val.last_name}`;
-    }
-    return String(val ?? "");
-  };
-
-  // 8) Mapeo de usuarios para heroSelect
+  // 7) Mapeo de usuarios para heroSelect (cuando creas caja)
   const userItems =
     usersData?.map((u) => ({
       id: u.id,
@@ -160,6 +108,7 @@ export default function CajaDiariaPage() {
       email: u.email,
     })) ?? [];
 
+  // Campos para el modal "Crear Nueva Caja"
   const formFields: FieldConfig[] = [
     {
       name: "saldo_inicial",
@@ -179,7 +128,7 @@ export default function CajaDiariaPage() {
     },
   ];
 
-  // 9) Crear nueva caja
+  // 8) Crear nueva caja
   async function handleConfirm() {
     try {
       const payload = {
@@ -210,8 +159,101 @@ export default function CajaDiariaPage() {
     }
   }
 
+  // 9) Definir renderCell para la tabla
+  const renderCell = (item: any, columnKey: string) => {
+    if (columnKey === "acciones") {
+      return (
+        <div className="relative flex justify-end items-center gap-2">
+          <Dropdown className="bg-background border-1 border-default-200">
+            <DropdownTrigger>
+              <Button isIconOnly radius="full" size="sm" variant="light">
+                <VerticalDotsIcon className="text-default-400" />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu>
+              <DropdownItem key="view" onPress={() => handleView(item)}>
+                Ver detalles
+              </DropdownItem>
+
+              {userMe?.rol === "administrador" ? (
+                <DropdownItem key="edit" onPress={() => handleEdit(item)}>
+                  Cerrar caja
+                </DropdownItem>
+              ) : null}
+
+              {userMe?.rol === "administrador" ? (
+                <DropdownItem key="delete" onPress={() => handleDelete(item)}>
+                  Eliminar
+                </DropdownItem>
+              ) : null}
+            </DropdownMenu>
+          </Dropdown>
+        </div>
+      );
+    }
+
+    // Resto de columnas
+    const val = item[columnKey];
+    // Formatear fechas (pueden ser string | null)
+    if (columnKey === "fecha_apertura" || columnKey === "fecha_cierre") {
+      return formatDateTime(val as string | null);
+    }
+
+    // Abierta/Cerrada por (puede ser number | { first_name, last_name })
+    if ((columnKey === "abierta_por" || columnKey === "cerrada_por") && val) {
+      if (typeof val === "object") {
+        return `${val.first_name} ${val.last_name}`;
+      } else {
+        // es un number
+        return String(val);
+      }
+    }
+
+    // Observaciones, etc.
+    return String(val ?? "");
+  };
+
+  // 10) Campos y valores para modal "Ver Detalles"
+  const detailFields: FieldConfig[] = [
+    {
+      name: "fecha_apertura",
+      label: "Fecha Apertura",
+      type: "text",
+    },
+    {
+      name: "saldo_inicial",
+      label: "Saldo Inicial",
+      type: "text",
+    },
+    {
+      name: "abierta_por",
+      label: "Abierta por",
+      type: "text",
+    },
+    {
+      name: "observaciones",
+      label: "Observaciones",
+      type: "text",
+    },
+  ];
+
+  // Convertimos la caja seleccionada en un object para el form
+  const detailValues = selectedCaja
+  ? {
+      fecha_apertura: formatDateTime(selectedCaja.fecha_apertura ?? null),
+      saldo_inicial: String(selectedCaja.saldo_inicial ?? ""),
+      abierta_por:
+        selectedCaja.abierta_por !== null && typeof selectedCaja.abierta_por === "object"
+          ? `${selectedCaja.abierta_por.first_name} ${selectedCaja.abierta_por.last_name}`
+          : String(selectedCaja.abierta_por ?? ""),
+      observaciones: selectedCaja.observaciones ?? "",
+    }
+  : {};
+
+
   return (
     <DefaultLayout>
+      {/* Tabla */}
       <AdvancedGlobalTable<GetCajaDiaria>
         title="Historial de cajas"
         data={data ?? []}
@@ -227,6 +269,7 @@ export default function CajaDiariaPage() {
         }}
       />
 
+      {/* Modal: Crear nueva caja */}
       <GlobalModal
         title="Registrar Nueva Caja"
         isOpen={isModalOpen}
@@ -240,6 +283,24 @@ export default function CajaDiariaPage() {
           values={formValues}
           onChange={handleFormChange}
         />
+      </GlobalModal>
+
+      {/* Modal: Ver detalles de caja */}
+      <GlobalModal
+        title="Detalles de la Caja"
+        isOpen={isDetailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        confirmLabel="Cerrar"
+        cancelLabel="Cancelar"
+        onConfirm={() => setDetailModalOpen(false)}
+      >
+        {selectedCaja && (
+          <GlobalForm
+            fields={detailFields}
+            values={detailValues}
+            onChange={() => {}}
+          />
+        )}
       </GlobalModal>
     </DefaultLayout>
   );
