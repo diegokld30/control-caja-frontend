@@ -10,6 +10,7 @@ import { useUsers } from "@/hooks/users/getUsers";
 import { useUserMe } from "@/hooks/users/getUserMe";
 import { GetCategoria } from "@/types/categoria/GetCategoria";
 import { CategoriaPostData } from "@/api/categoria/postCategoria";
+import { updateCategoria } from "@/api/categoria/putCategoria"; // Función para actualizar
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -37,25 +38,22 @@ const columns: ColumnDef<GetCategoria>[] = [
 export default function CategoriaPage() {
   const queryClient = useQueryClient();
 
-  // 1) Obtenemos data de la caja
+  // 1) Obtener data de categorías
   const { data, isLoading, isError, error } = useCategoria();
 
-  // 2) Obtenemos data de los usuarios
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    isError: usersError,
-  } = useUsers();
+  // 2) Obtener data de usuarios
+  const { data: usersData, isLoading: usersLoading, isError: usersError } = useUsers();
 
-  // 3) Obtenemos data del usuario logueado (para saber su rol)
-  const {
-    data: userMe,
-    isLoading: userMeLoading,
-    isError: userMeError,
-  } = useUserMe();
+  // 3) Obtener data del usuario logueado (para conocer su rol)
+  const { data: userMe, isLoading: userMeLoading, isError: userMeError } = useUserMe();
 
-  // 4) Estado del modal (nueva caja)
+  // 4) Estados para los modales
+  const [selectedCategoria, setSelectedCategoria] = React.useState<GetCategoria | null>(null);
+  const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [isUpdateModalOpen, setUpdateModalOpen] = React.useState(false);
   const [isModalOpen, setModalOpen] = React.useState(false);
+
+  // 5) Estado para los valores del formulario (para crear y actualizar)
   const [formValues, setFormValues] = React.useState({
     nombre: "",
   });
@@ -64,9 +62,9 @@ export default function CategoriaPage() {
     setFormValues((prev) => ({ ...prev, ...newValues }));
   }
 
-  // 5) Manejo de loading / error
+  // 6) Manejo de loading / error
   if (isLoading || usersLoading || userMeLoading) {
-    return <DefaultLayout>Cargando Categorias...</DefaultLayout>;
+    return <DefaultLayout>Cargando Categorías...</DefaultLayout>;
   }
   if (isError || usersError || userMeError) {
     return (
@@ -76,60 +74,69 @@ export default function CategoriaPage() {
     );
   }
 
-  // 6) Funciones de acciones
+  // 7) Funciones de acciones
   function handleView(item: GetCategoria) {
-    console.log("Ver detalles:", item);
-  }
-  function handleEdit(item: GetCategoria) {
-    console.log("Cerrar caja:", item);
-  }
-  function handleDelete(item: GetCategoria) {
-    console.log("Eliminar caja:", item);
-    // Lógica de borrado
+    setSelectedCategoria(item);
+    setDetailModalOpen(true);
   }
 
-  // 7) Definir renderCell adentro, para usar userMe?.rol
+  function handleEdit(item: GetCategoria) {
+    setSelectedCategoria(item);
+    // Precargamos el formulario con los datos actuales de la categoría
+    setFormValues({
+      nombre: item.nombre || "",
+    });
+    setUpdateModalOpen(true);
+  }
+
+  function handleDelete(item: GetCategoria) {
+    console.log("Eliminar categoría:", item);
+    // Aquí implementa la lógica de borrado si lo requieres.
+  }
+
+  // 8) Definir renderCell para la tabla
   const renderCell = (item: GetCategoria, columnKey: string) => {
     switch (columnKey) {
       case "nombre":
         return item.nombre;
-      case "acciones":
-        return (
-          <div className="relative flex justify-end items-center gap-2">
-            <Dropdown className="bg-background border-1 border-default-200">
-              <DropdownTrigger>
-                <Button isIconOnly radius="full" size="sm" variant="light">
-                  <VerticalDotsIcon className="text-default-400" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="view" onPress={() => handleView(item)}>
-                  Ver detalles
-                </DropdownItem>
-
-                {/* Condicional si el rol es "Administrador" */}
-                {userMe?.rol === "administrador" ? (
-                  <DropdownItem key="edit" onPress={() => handleEdit(item)}>
-                    Cerrar caja
+        case "acciones":
+          return (
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown className="bg-background border-1 border-default-200">
+                <DropdownTrigger>
+                  <Button isIconOnly radius="full" size="sm" variant="light">
+                    <VerticalDotsIcon className="text-default-400" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key="view" onPress={() => handleView(item)}>
+                    Ver detalles
                   </DropdownItem>
-                ) : null}
-
-                {/* Condicional si el rol es "Administrador" */}
-
-                {userMe?.rol === "administrador" ? (
-                  <DropdownItem key="delete" onPress={() => handleDelete(item)}>
-                    Eliminar
-                  </DropdownItem>
-                ) : null}
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+  
+                  {/* Condicional si el rol es "Administrador" */}
+                  {userMe?.rol === "administrador" ? (
+                    <DropdownItem key="edit" onPress={() => handleEdit(item)}>
+                      Actualizar categoria
+                    </DropdownItem>
+                  ) : null}
+  
+                  {/* Condicional si el rol es "Administrador" */}
+  
+                  {userMe?.rol === "administrador" ? (
+                    <DropdownItem key="delete" onPress={() => handleDelete(item)}>
+                      Eliminar categoria
+                    </DropdownItem>
+                  ) : null}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+      default:
+        return null;
     }
   };
 
-  // 8) Mapeo de usuarios para heroSelect
-
+  // 9) Campos para el formulario (se usan tanto para crear como para actualizar)
   const formFields: FieldConfig[] = [
     {
       name: "nombre",
@@ -138,7 +145,7 @@ export default function CategoriaPage() {
     },
   ];
 
-  // 9) Crear nueva caja
+  // 10) Función para crear nueva categoría
   async function handleConfirm() {
     try {
       const payload = {
@@ -147,28 +154,67 @@ export default function CategoriaPage() {
 
       await CategoriaPostData(payload);
       setModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["cajaDiaria"] });
+      queryClient.invalidateQueries({ queryKey: ["categoria"] });
 
       addToast({
-        title: "Caja creada",
-        description: "La categoria se creó exitosamente.",
+        title: "Categoría creada",
+        description: "La categoría se creó exitosamente.",
         color: "success",
       });
     } catch (err) {
-      console.error("Error al crear la categoria:", err);
+      console.error("Error al crear la categoría:", err);
       addToast({
         title: "Error",
-        description: "No se pudo crear la categoria.",
+        description: "No se pudo crear la categoría.",
         color: "danger",
       });
     }
   }
-  console.log(data);
+
+  // 11) Función para actualizar la categoría
+  async function handleUpdateConfirm() {
+    if (!selectedCategoria) return;
+    try {
+      const payload = {
+        nombre: formValues.nombre,
+      };
+      // Asumimos que selectedCategoria tiene la propiedad "id"
+      await updateCategoria(selectedCategoria.id, payload);
+      setUpdateModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["categoria"] });
+      addToast({
+        title: "Categoría actualizada",
+        description: "La categoría se actualizó exitosamente.",
+        color: "success",
+      });
+    } catch (err) {
+      console.error("Error al actualizar la categoría:", err);
+      addToast({
+        title: "Error",
+        description: "No se pudo actualizar la categoría.",
+        color: "danger",
+      });
+    }
+  }
+
+  // 12) Campos y valores para el modal de "Ver Detalles"
+  const detailFields: FieldConfig[] = [
+    {
+      name: "nombre",
+      label: "Nombre",
+      type: "text",
+    },
+  ];
+  const detailValues = selectedCategoria
+    ? {
+        nombre: selectedCategoria.nombre ?? "",
+      }
+    : {};
 
   return (
     <DefaultLayout>
       <AdvancedGlobalTable<GetCategoria>
-        title="Historial de cajas"
+        title="Historial de categorías"
         data={data ?? []}
         columns={columns}
         renderCell={renderCell}
@@ -180,13 +226,48 @@ export default function CategoriaPage() {
         }}
       />
 
+      {/* Modal para crear nueva categoría */}
       <GlobalModal
-        title="Registrar Nueva Categoria"
+        title="Registrar Nueva Categoría"
         isOpen={isModalOpen}
         onOpenChange={setModalOpen}
         confirmLabel="Guardar"
         cancelLabel="Cancelar"
         onConfirm={handleConfirm}
+      >
+        <GlobalForm
+          fields={formFields}
+          values={formValues}
+          onChange={handleFormChange}
+        />
+      </GlobalModal>
+
+      {/* Modal para ver detalles de la categoría */}
+      <GlobalModal
+        title="Detalles de la Categoría"
+        isOpen={isDetailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        confirmLabel="Cerrar"
+        cancelLabel="Cancelar"
+        onConfirm={() => setDetailModalOpen(false)}
+      >
+        {selectedCategoria && (
+          <GlobalForm
+            fields={detailFields}
+            values={detailValues}
+            onChange={() => {}}
+          />
+        )}
+      </GlobalModal>
+
+      {/* Modal para actualizar la categoría */}
+      <GlobalModal
+        title="Actualizar Categoría"
+        isOpen={isUpdateModalOpen}
+        onOpenChange={setUpdateModalOpen}
+        confirmLabel="Actualizar"
+        cancelLabel="Cancelar"
+        onConfirm={handleUpdateConfirm}
       >
         <GlobalForm
           fields={formFields}
