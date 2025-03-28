@@ -31,6 +31,7 @@ interface ColumnDef<T> {
 }
 
 const columns: ColumnDef<GetCajaDiaria>[] = [
+  { name: "Nombre", uid: "nombre", sortable: true },
   { name: "Fecha Apertura", uid: "fecha_apertura", sortable: true },
   { name: "Fecha Cierre", uid: "fecha_cierre", sortable: true },
   { name: "Saldo Inicial", uid: "saldo_inicial", sortable: true },
@@ -61,6 +62,7 @@ export default function CajaDiariaPage() {
   // Estado para creación
   const [isModalOpen, setModalOpen] = React.useState(false);
   const [formValues, setFormValues] = React.useState({
+    nombre: "",
     saldo_inicial: "",
     abierto_por: "",
     observaciones: "",
@@ -125,6 +127,7 @@ export default function CajaDiariaPage() {
     if (!selectedCaja || !userMe) return;
     try {
       const payload = {
+        nombre: selectedCaja.nombre,
         fecha_cierre: new Date().toISOString(),
         saldo_inicial: selectedCaja.saldo_inicial,
         saldo_final: String(closeFormValues.saldo_final),
@@ -159,6 +162,7 @@ export default function CajaDiariaPage() {
     if (!itemToDelete) return;
     try {
       const payload = {
+        nombre: itemToDelete.nombre,
         fecha_cierre: itemToDelete.fecha_cierre,
         saldo_inicial: itemToDelete.saldo_inicial,
         saldo_final: itemToDelete.saldo_final,
@@ -238,6 +242,11 @@ export default function CajaDiariaPage() {
 
   const formFields: FieldConfig[] = [
     {
+      name: "nombre",
+      label: "Nombre de la caja",
+      type: "text",
+    },
+    {
       name: "saldo_inicial",
       label: "Saldo Inicial",
       type: "heroNumber",
@@ -316,6 +325,7 @@ export default function CajaDiariaPage() {
         renderCell={renderCell}
         onAddNew={() => {
           setFormValues({
+            nombre: "",
             saldo_inicial: "",
             abierto_por: "",
             observaciones: "Abierta",
@@ -334,6 +344,7 @@ export default function CajaDiariaPage() {
         onConfirm={async () => {
           try {
             const payload = {
+              nombre: String(formValues.nombre),
               fecha_cierre: null,
               saldo_inicial: String(formValues.saldo_inicial),
               saldo_final: null,

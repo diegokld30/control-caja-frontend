@@ -3,6 +3,7 @@
 import { api } from "../axiosInstance";
 
 export type CajaDiariaDeleteData = {
+  nombre: string;
   fecha_cierre: string | null;
   saldo_inicial: string | null;
   saldo_final: string | null;

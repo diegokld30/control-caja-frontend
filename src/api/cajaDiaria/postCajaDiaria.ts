@@ -6,6 +6,7 @@ import { api } from "../axiosInstance";
  * Ajusta según tu modelo/serializer en DRF.
  */
 export interface CajaDiariaPostData {
+  nombre: string;
   fecha_cierre: string | null;
   saldo_inicial: string | null;
   saldo_final: string | null;

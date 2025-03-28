@@ -1,6 +1,7 @@
 //src/tupes/cajaDiaria/GetCajaDiaria.ts
 export type GetCajaDiaria = {
     id: number;
+    nombre: string;
     fecha_apertura: string | null;
     fecha_cierre: string | null;
     saldo_inicial: string | null;
