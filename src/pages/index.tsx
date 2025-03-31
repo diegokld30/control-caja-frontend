@@ -202,7 +202,7 @@ export default function IndexPage() {
 
         {/* Footer */}
         <footer className="mt-6 text-center text-gray-500">
-          &copy; {new Date().getFullYear()} Dashboard Pro. Todos los derechos
+          &copy; {new Date().getFullYear()} Ventas superete. Todos los derechos
           reservados.
         </footer>
       </div>
