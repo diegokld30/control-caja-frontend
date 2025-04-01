@@ -4,6 +4,14 @@ export const siteConfig = {
   name: "Control de caja",
   description: "Sistema de control de caja diaria",
   navItems: [
+    {
+      label: "Transacciones",
+      href: "/transacciones",
+    },
+    {
+      label: "Detalles de la caja",
+      href: "/detalleCaja",
+    },
    
     {
       label: "Caja Diaria",
@@ -13,26 +21,28 @@ export const siteConfig = {
       label: "Categoria",
       href: "/categoria",
     },
-    {
-      label: "Detalles de la caja",
-      href: "/detalleCaja",
-    },
+    
     {
       label: "Productos",
       href: "/producto",
     },
+    
+    {
+      label: "Usuarios",
+      href: "/users",
+    },
+  ],
+  navMenuItems: [
+    
     {
       label: "Transacciones",
       href: "/transacciones",
     },
     {
-      label: "Usuarios",
-      href: "/users",
+      label: "Detalles de la caja",
+      href: "/detalleCaja",
     },
-    
-  ],
-  navMenuItems: [
-    
+   
     {
       label: "Caja Diaria",
       href: "/cajaDiaria",
@@ -41,18 +51,12 @@ export const siteConfig = {
       label: "Categoria",
       href: "/categoria",
     },
-    {
-      label: "Detalles de la caja",
-      href: "/detalleCaja",
-    },
+    
     {
       label: "Productos",
       href: "/producto",
     },
-    {
-      label: "Transacciones",
-      href: "/transacciones",
-    },
+    
     {
       label: "Usuarios",
       href: "/users",

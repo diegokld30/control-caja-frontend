@@ -9,17 +9,22 @@ import TransaccionesPage from "@/pages/transacciones";
 import UsersPage from "@/pages/users";
 import LoginPage from "@/pages/login";
 import ProtectedRoute from "@/components/ProtectedRoute"
+import { useUserMe } from "@/hooks/users/getUserMe";
 
 function App() {
+  const { data: userMe } = useUserMe();
   return (
+
     <Routes>
       <Route element={<LoginPage />} path="/login" />
       <Route element={<ProtectedRoute><IndexPage /></ProtectedRoute>} path="/" />
-      <Route element={<ProtectedRoute><CajaDiariaPage /></ProtectedRoute>} path="/cajaDiaria" />
-      <Route element={<ProtectedRoute><CategoriaPage /></ProtectedRoute>} path="/categoria" />
-      <Route element={<ProtectedRoute><DetalleCajaPage /></ProtectedRoute>} path="/detalleCaja" />
-      <Route element={<ProtectedRoute><ProductoPage /></ProtectedRoute>} path="/producto" />
       <Route element={<ProtectedRoute><TransaccionesPage /></ProtectedRoute>} path="/transacciones" />
+      <Route element={<ProtectedRoute><CajaDiariaPage /></ProtectedRoute>} path="/cajaDiaria" />
+      {userMe?.rol === "administrador" ? (
+        <Route element={<ProtectedRoute><DetalleCajaPage /></ProtectedRoute>} path="/detalleCaja" />
+      ) : null}
+      <Route element={<ProtectedRoute><CategoriaPage /></ProtectedRoute>} path="/categoria" />
+      <Route element={<ProtectedRoute><ProductoPage /></ProtectedRoute>} path="/producto" />
       <Route element={<ProtectedRoute><UsersPage /></ProtectedRoute>} path="/users" />
     </Routes>
   );

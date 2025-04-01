@@ -36,7 +36,7 @@ import {
 } from "@heroui/react";
 import { VerticalDotsIcon } from "@/components/icons";
 
-// Extendemos FieldConfig para incluir isSearchable (si aún no lo tienes en tu definición global)
+// Extendemos FieldConfig para incluir isSearchable (por si falla en el global)
 interface ExtendedFieldConfig extends FieldConfig {
   isSearchable?: boolean;
 }
@@ -202,15 +202,15 @@ export default function DetalleCajaPage() {
 
   // Función para consolidar transacciones y cerrar caja (Opción 1)
   async function handleCerrarCaja() {
-    // Se asume que tienes un endpoint para consolidar la caja
-    // Por ejemplo, llamamos a `cerrarCaja` enviando el ID de la caja abierta.
-    // Aquí suponemos que hay una única caja abierta (fecha_cierre es null).
+    
+    // Por ejemplo, llamamos a `cerrarcaja` enviando el ID de la caja abierta.
+    // Aquí se asume que hay una única caja abierta (fecha_cierre es null).
     const cajaAbierta = cajas?.find((c) => !c.fecha_cierre);
     if (!cajaAbierta) {
       addToast({
         title: "Error",
         description: "No hay caja abierta para cerrar.",
-        color: "danger",
+        color: "warning",
       });
       return;
     }
